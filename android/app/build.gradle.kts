@@ -7,18 +7,18 @@ plugins {
 
 android {
     namespace = "com.example.bseera"
+
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
-
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_17 // 👈 تحديث إلى 17
-        targetCompatibility = JavaVersion.VERSION_17 // 👈 تحديث إلى 17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "17" // 👈 تحديث إلى 17
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -30,8 +30,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        multiDexEnabled = true // إضافة علامة اليساوي لتناسب Kotlin
     }
 
     buildTypes {
@@ -43,11 +41,10 @@ android {
     }
 }
 
-// 💡 نقل بلوك الـ dependencies إلى مكانه الصحيح (خارج بلوك android) وتعديل صيغته
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-}
-
 flutter {
     source = "../.."
+}
+dependencies {
+    // تأكدي من وجود هذا السطر هنا:
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
