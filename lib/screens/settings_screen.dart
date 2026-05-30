@@ -1,19 +1,35 @@
+
+import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
+
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final ImagePicker _picker = ImagePicker(); // هذا السطر ضروري
+  File? _profileImage;
   bool _isDarkMode = false;
   bool _notifications = true;
   bool _location = true;
+  final ProfileController controller = Get.find();
   String _selectedLanguage = 'العربية';
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,15 +86,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _buildProfileItem(
                           icon: Icons.person_outline,
                           title: 'اسم المستخدم',
-                          subtitle: 'أحمد محمد',
-                          onTap: () => _showEditDialog('اسم المستخدم', 'أحمد محمد'),
+                          subtitleWidget: Obx(() => Text(controller.name.value, style: Theme.of(context).textTheme.bodySmall)),
+                          onTap: () => _showEditDialog('اسم المستخدم', controller.name.value),
                         ),
                         const Divider(height: 24),
                         _buildProfileItem(
                           icon: Icons.email_outlined,
                           title: 'البريد الإلكتروني',
                           subtitle: 'ahmed@gmail.com',
-                          onTap: () => _showEditDialog('البريد الإلكتروني', 'ahmed@gmail.com'),
+                          subtitleWidget: Obx(() => Text(
+                              controller.email.value,
+                              style: Theme.of(context).textTheme.bodySmall,
+                          )),
+                          onTap: () => _showEditDialog('البريد الإلكتروني', controller.email.value),
+                        ),
+                        const Divider(height: 24),
+                        _buildProfileItem(
+                          icon: Icons.camera_alt_outlined,
+                          title: 'الصورة الشخصية',
+                          subtitle: 'اضغط للتعديل',
+                          subtitleWidget: Obx(() => Text(
+                            controller.profileImagePath.value.isEmpty ? 'اضغط للتعديل' : 'تم تغيير الصورة',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          )),
+                          onTap: () => _showEditImageDialog(),
                         ),
                         const Divider(height: 24),
                         _buildProfileItem(
@@ -321,7 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildProfileItem({
     required IconData icon,
     required String title,
-    required String subtitle,
+    String? subtitle, // جعلناه اختيارياً
+    Widget? subtitleWidget, // أضفناه كـ Widget اختياري
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -349,8 +381,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
+                  // المنطق هنا: إذا وُجد subtitleWidget اعرضه، وإلا اعرض النص التقليدي
+                  subtitleWidget ?? Text(
+                    subtitle ?? '',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -526,7 +559,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showEditDialog(String title, String currentValue) {
-    final controller = TextEditingController(text: currentValue);
+    // هذا الـ controller خاص بحقل النص فقط
+    final TextEditingController textEditingController = TextEditingController(text: currentValue);
+
+    // هذا الـ controller الخاص بـ GetX (تأكدي أنه معرف في بداية الكلاس أو هنا)
+    final ProfileController profileController = Get.find();
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -536,7 +574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         content: TextField(
-          controller: controller,
+          controller: textEditingController, // نستخدم الـ controller الخاص بالنص
           decoration: InputDecoration(
             hintText: 'أدخل $title الجديد',
           ),
@@ -546,16 +584,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Get.back(),
             child: const Text('إلغاء'),
           ),
+          // داخل _showEditDialog في SettingsScreen:
           ElevatedButton(
             onPressed: () {
+              if (title == 'اسم المستخدم') {
+                controller.updateName(textEditingController.text);
+              } else if (title == 'البريد الإلكتروني') {
+                controller.updateEmail(textEditingController.text);
+              }
               Get.back();
-              Get.snackbar(
-                'تم التحديث',
-                'تم تحديث $title بنجاح',
-                backgroundColor: AppTheme.success,
-                colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM,
-              );
+              Get.snackbar('تم التحديث', 'تم تحديث $title بنجاح', backgroundColor: Colors.green, colorText: Colors.white);
             },
             child: const Text('حفظ'),
           ),
@@ -563,7 +601,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+  void _showEditImageDialog() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('تغيير الصورة الشخصية', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 18)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImageOption(icon: Icons.camera_alt, label: 'الكاميرا', onTap: () { Get.back(); _pickImage(ImageSource.camera); }),
+                _buildImageOption(icon: Icons.photo_library, label: 'المعرض', onTap: () { Get.back(); _pickImage(ImageSource.gallery); }),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildImageOption({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: AppTheme.primaryGreen, size: 30)),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
   void _showPasswordDialog() {
     Get.dialog(
       AlertDialog(

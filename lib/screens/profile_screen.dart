@@ -1,17 +1,18 @@
+import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-
+   ProfileScreen({super.key});
+   final ProfileController controller = Get.put(ProfileController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 220,
             floating: false,
             pinned: true,
             leading: IconButton(
@@ -52,21 +53,21 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        'أحمد محمد',
+                      Obx(()=>Text(
+                        controller.name.value,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      Text(
-                        'ahmed@example.com',
+                      )),
+                  Obx(()=>Text(
+                     controller.email.value,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.8),
                           fontSize: 14,
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ),
