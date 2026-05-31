@@ -1,4 +1,3 @@
-
 import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,318 +10,395 @@ class SettingsScreen extends StatefulWidget {
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
-
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final ImagePicker _picker = ImagePicker(); // هذا السطر ضروري
+  final ImagePicker _picker = ImagePicker();
   File? _profileImage;
   bool _isDarkMode = false;
+  bool isCurrentlyDark = Get.isDarkMode;
   bool _notifications = true;
   bool _location = true;
   final ProfileController controller = Get.find();
   String _selectedLanguage = 'العربية';
+
+  @override
+  void initState() {
+    super.initState();
+    if (Get.locale?.languageCode == 'en') {
+      _selectedLanguage = 'English';
+    } else {
+      _selectedLanguage = 'العربية';
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
-    final XFile? pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+
+      if (pickedFile != null) {
+        controller.updateImage(pickedFile.path);
+
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+
+        Get.snackbar(
+          'success_title'.tr,
+          'image_updated_success'.tr,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'error_title'.tr,
+        '${'image_error'.tr}: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Get.back(),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'الإعدادات',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+    final bool isRtl = Get.locale?.languageCode == 'ar';
+
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: Icon(
+                  isRtl ? Icons.arrow_back : Icons.arrow_forward,
                   color: Colors.white,
                 ),
+                onPressed: () => Get.back(),
               ),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: Text(
+                    'settings'.tr,
+                    style: const TextStyle(color: Colors.white, fontSize: 25),
+                  ),
+                ),
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                  ),
                 ),
               ),
             ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Profile Section
-                  _buildSectionHeader('حسابي'),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileItem(
-                          icon: Icons.person_outline,
-                          title: 'اسم المستخدم',
-                          subtitleWidget: Obx(() => Text(controller.name.value, style: Theme.of(context).textTheme.bodySmall)),
-                          onTap: () => _showEditDialog('اسم المستخدم', controller.name.value),
-                        ),
-                        const Divider(height: 24),
-                        _buildProfileItem(
-                          icon: Icons.email_outlined,
-                          title: 'البريد الإلكتروني',
-                          subtitle: 'ahmed@gmail.com',
-                          subtitleWidget: Obx(() => Text(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Profile Section
+                    _buildSectionHeader('my_account'.tr),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildProfileItem(
+                            icon: Icons.person_outline,
+                            title: 'username'.tr,
+                            subtitleWidget: Obx(
+                              () => Text(
+                                controller.name.value,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.black),
+                              ),
+                            ),
+                            onTap: () => _showEditDialog(
+                              'username',
+                              controller.name.value,
+                            ),
+                          ),
+                          const Divider(height: 24),
+                          _buildProfileItem(
+                            icon: Icons.email_outlined,
+                            title: 'email'.tr,
+                            subtitleWidget: Obx(
+                              () => Text(
+                                controller.email.value,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.black),
+                              ),
+                            ),
+                            onTap: () => _showEditDialog(
+                              'email',
                               controller.email.value,
-                              style: Theme.of(context).textTheme.bodySmall,
-                          )),
-                          onTap: () => _showEditDialog('البريد الإلكتروني', controller.email.value),
-                        ),
-                        const Divider(height: 24),
-                        _buildProfileItem(
-                          icon: Icons.camera_alt_outlined,
-                          title: 'الصورة الشخصية',
-                          subtitle: 'اضغط للتعديل',
-                          subtitleWidget: Obx(() => Text(
-                            controller.profileImagePath.value.isEmpty ? 'اضغط للتعديل' : 'تم تغيير الصورة',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          )),
-                          onTap: () => _showEditImageDialog(),
-                        ),
-                        const Divider(height: 24),
-                        _buildProfileItem(
-                          icon: Icons.phone_outlined,
-                          title: 'رقم الهاتف',
-                          subtitle: '+970598358225',
-                          onTap: () => _showEditDialog('رقم الهاتف', '+970598358225'),
-                        ),
-                        const Divider(height: 24),
-                        _buildProfileItem(
-                          icon: Icons.lock_outline,
-                          title: 'تغيير كلمة المرور',
-                          subtitle: '12345678',
-                          onTap: () => _showPasswordDialog(),
-                        ),
-                      ],
+                            ),
+                          ),
+                          const Divider(height: 24),
+                          _buildProfileItem(
+                            icon: Icons.camera_alt_outlined,
+                            title: 'profile_image'.tr,
+                            subtitle: 'tap_to_edit'.tr,
+                            onTap: () => _showEditImageDialog(),
+                          ),
+                          const Divider(height: 24),
+                          _buildProfileItem(
+                            icon: Icons.phone_outlined,
+                            title: 'phone_number'.tr,
+                            subtitle: '+970598358225',
+                            onTap: () => _showEditDialog(
+                              'phone_number',
+                              '+970598358225',
+                            ),
+                          ),
+                          const Divider(height: 24),
+                          _buildProfileItem(
+                            icon: Icons.lock_outline,
+                            title: 'change_password'.tr,
+                            subtitle: '12345678',
+                            onTap: () => _showPasswordDialog(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Appearance Section
-                  _buildSectionHeader('المظهر'),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                    // Appearance Section
+                    _buildSectionHeader('appearance'.tr),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSwitchItem(
+                            icon: Icons.dark_mode_outlined,
+                            title: 'dark_mode'.tr,
+                            subtitle: 'dark_mode_sub'.tr,
+                            value: isCurrentlyDark,
+                            // نستخدم القيمة القادمة من GetX مباشرة
+                            onChanged: (value) {
+                              setState(() {
+                                // لتحديث الواجهة فوراً عند النقر
+                                isCurrentlyDark = value;
+                              });
+
+                              // تغيير الوضع في التطبيق بالكامل
+                              if (value) {
+                                Get.changeThemeMode(ThemeMode.dark);
+                              } else {
+                                Get.changeThemeMode(ThemeMode.light);
+                              }
+                            },
+                          ),
+                          const Divider(height: 24),
+                          _buildDropdownItem(
+                            icon: Icons.language,
+                            title: 'language'.tr,
+                            value: _selectedLanguage,
+                            items: const ['العربية', 'English'],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedLanguage = value;
+                                });
+
+                                if (value == 'العربية') {
+                                  Get.updateLocale(const Locale('ar', 'AE'));
+                                } else if (value == 'English') {
+                                  Get.updateLocale(const Locale('en', 'US'));
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        _buildSwitchItem(
-                          icon: Icons.dark_mode_outlined,
-                          title: 'الوضع الداكن',
-                          subtitle: 'تفعيل الوضع الداكن للتطبيق',
-                          value: _isDarkMode,
-                          onChanged: (value) {
-                            setState(() {
-                              _isDarkMode = value;
-                            });
-                          },
-                        ),
-                        const Divider(height: 24),
-                        _buildDropdownItem(
-                          icon: Icons.language,
-                          title: 'اللغة',
-                          value: _selectedLanguage,
-                          items: const ['العربية', 'English', 'Français'],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedLanguage = value!;
-                            });
-                          },
-                        ),
-                      ],
+
+                    const SizedBox(height: 24),
+
+                    // Notifications Section
+                    _buildSectionHeader('notifications_section'.tr),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSwitchItem(
+                            icon: Icons.notifications_outlined,
+                            title: 'prayer_notifications'.tr,
+                            subtitle: 'prayer_notifications_sub'.tr,
+                            value: _notifications,
+                            onChanged: (value) {
+                              setState(() {
+                                _notifications = value;
+                              });
+                            },
+                          ),
+                          const Divider(height: 24),
+                          _buildSwitchItem(
+                            icon: Icons.location_on_outlined,
+                            title: 'location_title'.tr,
+                            subtitle: 'location_sub'.tr,
+                            value: _location,
+                            onChanged: (value) {
+                              setState(() {
+                                _location = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Notifications Section
-                  _buildSectionHeader('الإشعارات'),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                    // Support Section
+                    _buildSectionHeader('help_support'.tr),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildActionItem(
+                            icon: Icons.help_outline,
+                            title: 'faq'.tr,
+                            isRtl: isRtl,
+                            onTap: () {},
+                          ),
+                          const Divider(height: 24),
+                          _buildActionItem(
+                            icon: Icons.contact_support_outlined,
+                            title: 'contact_us'.tr,
+                            isRtl: isRtl,
+                            onTap: () {},
+                          ),
+                          const Divider(height: 24),
+                          _buildActionItem(
+                            icon: Icons.info_outline,
+                            title: 'about_us'.tr,
+                            isRtl: isRtl,
+                            onTap: () {},
+                          ),
+                          const Divider(height: 24),
+                          _buildActionItem(
+                            icon: Icons.share_outlined,
+                            title: 'share_app'.tr,
+                            isRtl: isRtl,
+                            onTap: () {},
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        _buildSwitchItem(
-                          icon: Icons.notifications_outlined,
-                          title: 'إشعارات الصلاة',
-                          subtitle: 'تفعيل إشعارات أوقات الصلاة',
-                          value: _notifications,
-                          onChanged: (value) {
-                            setState(() {
-                              _notifications = value;
-                            });
-                          },
-                        ),
-                        const Divider(height: 24),
-                        _buildSwitchItem(
-                          icon: Icons.location_on_outlined,
-                          title: 'الموقع',
-                          subtitle: 'تفعيل تحديد الموقع لحساب أوقات الصلاة',
-                          value: _location,
-                          onChanged: (value) {
-                            setState(() {
-                              _location = value;
-                            });
-                          },
-                        ),
-                      ],
+
+                    const SizedBox(height: 24),
+
+                    // Danger Zone
+                    _buildSectionHeader('account_management'.tr),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildDangerItem(
+                            icon: Icons.logout,
+                            title: 'logout'.tr,
+                            color: AppTheme.warning,
+                            onTap: () => _showLogoutDialog(),
+                          ),
+                          const Divider(height: 24),
+                          _buildDangerItem(
+                            icon: Icons.delete_forever,
+                            title: 'delete_account'.tr,
+                            color: AppTheme.error,
+                            onTap: () => _showDeleteAccountDialog(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                  // Support Section
-                  _buildSectionHeader('المساعدة والدعم'),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                    // Version Info
+                    Center(
+                      child: Text(
+                        'app_name'.tr + ' v1.0.0',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        _buildActionItem(
-                          icon: Icons.help_outline,
-                          title: 'الأسئلة الشائعة',
-                          onTap: () {},
-                        ),
-                        const Divider(height: 24),
-                        _buildActionItem(
-                          icon: Icons.contact_support_outlined,
-                          title: 'تواصل معنا',
-                          onTap: () {},
-                        ),
-                        const Divider(height: 24),
-                        _buildActionItem(
-                          icon: Icons.info_outline,
-                          title: 'من نحن',
-                          onTap: () {},
-                        ),
-                        const Divider(height: 24),
-                        _buildActionItem(
-                          icon: Icons.share_outlined,
-                          title: 'مشاركة التطبيق',
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 24),
-
-                  // Danger Zone
-                  _buildSectionHeader('إدارة الحساب'),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        _buildDangerItem(
-                          icon: Icons.logout,
-                          title: 'تسجيل الخروج',
-                          color: AppTheme.warning,
-                          onTap: () => _showLogoutDialog(),
-                        ),
-                        const Divider(height: 24),
-                        _buildDangerItem(
-                          icon: Icons.delete_forever,
-                          title: 'حذف الحساب',
-                          color: AppTheme.error,
-                          onTap: () => _showDeleteAccountDialog(),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Version Info
-                  Center(
-                    child: Text(
-                      'إسلامي v1.0.0',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -341,9 +417,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -352,8 +428,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildProfileItem({
     required IconData icon,
     required String title,
-    String? subtitle, // جعلناه اختيارياً
-    Widget? subtitleWidget, // أضفناه كـ Widget اختياري
+    String? subtitle,
+    Widget? subtitleWidget,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -366,10 +442,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primaryGreen, size: 24),
+              child: Icon(icon, color: Colors.black, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -378,22 +454,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.labelLarge,
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
                   ),
                   const SizedBox(height: 4),
-                  // المنطق هنا: إذا وُجد subtitleWidget اعرضه، وإلا اعرض النص التقليدي
-                  subtitleWidget ?? Text(
-                    subtitle ?? '',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  subtitleWidget ??
+                      Text(
+                        subtitle ?? '',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                      ),
                 ],
               ),
             ),
-            Icon(
-              Icons.edit,
-              color: AppTheme.primaryGreen.withOpacity(0.5),
-              size: 20,
-            ),
+            const Icon(Icons.edit, color: Colors.black, size: 20),
           ],
         ),
       ),
@@ -412,10 +487,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.primaryGreen.withOpacity(0.1),
+            color: AppTheme.primaryGreen.withOpacity(0.6),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.primaryGreen, size: 24),
+          child: Icon(icon, color: Colors.black, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -424,12 +499,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.labelLarge,
+                style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: const TextStyle(color: Colors.black, fontSize: 12),
               ),
             ],
           ),
@@ -438,7 +513,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: value,
           onChanged: onChanged,
           activeColor: AppTheme.primaryGreen,
-          activeTrackColor: AppTheme.primaryGreen.withOpacity(0.3),
+          activeTrackColor: AppTheme.primaryGreen.withOpacity(0.6),
         ),
       ],
     );
@@ -456,26 +531,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.primaryGreen.withOpacity(0.1),
+            color: AppTheme.primaryGreen.withOpacity(0.6),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.primaryGreen, size: 24),
+          child: Icon(icon, color: Colors.black, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.labelLarge,
+            style: const TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
         DropdownButton<String>(
           value: value,
           underline: const SizedBox(),
-          icon: Icon(Icons.arrow_drop_down, color: AppTheme.primaryGreen),
+          icon: const Icon(Icons.arrow_drop_down, color: AppTheme.primaryGreen),
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item),
+              child: Text(
+                item,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey,)
+              ),
             );
           }).toList(),
           onChanged: onChanged,
@@ -487,6 +565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildActionItem({
     required IconData icon,
     required String title,
+    required bool isRtl,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -499,21 +578,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withOpacity(0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primaryGreen, size: 24),
+              child: Icon(icon, color: Colors.black, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.labelLarge,
+                style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
             ),
             Icon(
-              Icons.arrow_forward_ios,
-              color: AppTheme.primaryGreen.withOpacity(0.5),
+              isRtl ? Icons.arrow_back_ios_new : Icons.arrow_forward_ios,
+              color: Colors.black,
               size: 16,
             ),
           ],
@@ -547,9 +626,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: color,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: color),
               ),
             ),
           ],
@@ -558,64 +637,86 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showEditDialog(String title, String currentValue) {
-    // هذا الـ controller خاص بحقل النص فقط
-    final TextEditingController textEditingController = TextEditingController(text: currentValue);
-
-    // هذا الـ controller الخاص بـ GetX (تأكدي أنه معرف في بداية الكلاس أو هنا)
-    final ProfileController profileController = Get.find();
+  void _showEditDialog(String keyKey, String currentValue) {
+    final TextEditingController textEditingController = TextEditingController(
+      text: currentValue,
+    );
 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'تعديل $title',
+          '${'edit'.tr} ${keyKey.tr}',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         content: TextField(
-          controller: textEditingController, // نستخدم الـ controller الخاص بالنص
+          controller: textEditingController,
           decoration: InputDecoration(
-            hintText: 'أدخل $title الجديد',
+            hintText: '${'enter_new'.tr} ${keyKey.tr}',
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('إلغاء'),
-          ),
-          // داخل _showEditDialog في SettingsScreen:
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
-              if (title == 'اسم المستخدم') {
+              if (keyKey == 'username') {
                 controller.updateName(textEditingController.text);
-              } else if (title == 'البريد الإلكتروني') {
+              } else if (keyKey == 'email') {
                 controller.updateEmail(textEditingController.text);
               }
               Get.back();
-              Get.snackbar('تم التحديث', 'تم تحديث $title بنجاح', backgroundColor: Colors.green, colorText: Colors.white);
+              Get.snackbar(
+                'success_title'.tr,
+                '${keyKey.tr} ${'updated_success'.tr}',
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+              );
             },
-            child: const Text('حفظ'),
+            child: Text('save'.tr),
           ),
         ],
       ),
     );
   }
+
   void _showEditImageDialog() {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('تغيير الصورة الشخصية', style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontSize: 18)),
+            Text(
+              'change_profile_image'.tr,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineLarge?.copyWith(fontSize: 18),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildImageOption(icon: Icons.camera_alt, label: 'الكاميرا', onTap: () { Get.back(); _pickImage(ImageSource.camera); }),
-                _buildImageOption(icon: Icons.photo_library, label: 'المعرض', onTap: () { Get.back(); _pickImage(ImageSource.gallery); }),
+                _buildImageOption(
+                  icon: Icons.camera_alt,
+                  label: 'camera'.tr,
+                  onTap: () {
+                    Get.back();
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                _buildImageOption(
+                  icon: Icons.photo_library,
+                  label: 'gallery'.tr,
+                  onTap: () {
+                    Get.back();
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -625,24 +726,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildImageOption({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildImageOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: AppTheme.primaryGreen, size: 30)),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppTheme.primaryGreen, size: 30),
+          ),
           const SizedBox(height: 8),
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
+
   void _showPasswordDialog() {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'تغيير كلمة المرور',
+          'change_password'.tr,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineLarge,
         ),
@@ -651,43 +764,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             TextField(
               obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'كلمة المرور الحالية',
-              ),
+              decoration: InputDecoration(hintText: 'current_password'.tr),
             ),
             const SizedBox(height: 12),
             TextField(
               obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'كلمة المرور الجديدة',
-              ),
+              decoration: InputDecoration(hintText: 'new_password'.tr),
             ),
             const SizedBox(height: 12),
             TextField(
               obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'تأكيد كلمة المرور الجديدة',
-              ),
+              decoration: InputDecoration(hintText: 'confirm_new_password'.tr),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('إلغاء'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
               Get.back();
               Get.snackbar(
-                'تم التحديث',
-                'تم تغيير كلمة المرور بنجاح',
+                'success_title'.tr,
+                'password_changed_success'.tr,
                 backgroundColor: AppTheme.success,
                 colorText: Colors.white,
                 snackPosition: SnackPosition.BOTTOM,
               );
             },
-            child: const Text('حفظ'),
+            child: Text('save'.tr),
           ),
         ],
       ),
@@ -699,29 +803,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'تسجيل الخروج',
+          'logout'.tr,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         content: Text(
-          'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
+          'logout_confirm_msg'.tr,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('إلغاء'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
               Get.back();
               Get.offAllNamed('/login');
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.warning,
-            ),
-            child: const Text('تسجيل الخروج'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.warning),
+            child: Text('logout'.tr),
           ),
         ],
       ),
@@ -733,31 +832,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'حذف الحساب',
+          'delete_account'.tr,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            color: AppTheme.error,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(color: AppTheme.error),
         ),
         content: Text(
-          'هل أنت متأكد من رغبتك في حذف حسابك؟ لا يمكن التراجع عن هذا الإجراء.',
+          'delete_account_confirm_msg'.tr,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('إلغاء'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
               Get.back();
               Get.offAllNamed('/login');
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
-            ),
-            child: const Text('حذف الحساب'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
+            child: Text('delete_account'.tr),
           ),
         ],
       ),

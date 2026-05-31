@@ -30,227 +30,157 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🌟 فحص اتجاه اللغة الحالية ديناميكياً للتطبيق بالكامل
+    final bool isRtl = Get.locale?.languageCode == 'ar';
+
     return Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppTheme.warmWhite, AppTheme.cream],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      body: Container(
+        alignment: Alignment.bottomCenter,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.warmWhite, AppTheme.cream],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: SafeArea(
-            child: Directionality(
-              textDirection: TextDirection.rtl, // 🌟 تأكيد الاتجاه العربي للواجهة بالكامل
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 20),
+        ),
+        child: SafeArea(
+          child: Directionality(
+            // 🌟 استبدال الاتجاه الثابت باتجاه مرن يتغير بتغير اللغة
+            textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
 
-                      // Logo
-                      Center(
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppTheme.primaryGradient,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryGreen.withOpacity(0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.mosque,
-                            size: 50,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                          .animate()
-                          .scale(duration: 600.ms, curve: Curves.easeOutBack),
-
-                      const SizedBox(height: 32),
-
-                      // Title
-                      Text(
-                        _isLogin ? 'تسجيل الدخول' : 'إنشاء حساب',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.displayMedium,
-                      )
-                          .animate(key: ValueKey(_isLogin)) // إعادة تشغيل الحركة عند التبديل
-                          .fadeIn(duration: 400.ms)
-                          .slideY(begin: 0.2, end: 0),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        _isLogin
-                            ? 'مرحباً بعودتك! سجل دخولك للمتابعة'
-                            : 'أنشئ حساباً جديداً للبدء',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey,
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Form Fields
-                      if (!_isLogin) ...[
-                        _buildTextField(
-                          key: const ValueKey('name_field'),
-                          controller: _nameController,
-                          hint: 'الاسم الكامل',
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          key: const ValueKey('phone_field'),
-                          controller: _phoneController,
-                          hint: 'رقم الهاتف',
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-
-                      _buildTextField(
-                        key: const ValueKey('email_field'),
-                        controller: _emailController,
-                        hint: 'البريد الإلكتروني',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _buildTextField(
-                        key: const ValueKey('password_field'),
-                        controller: _passwordController,
-                        hint: 'كلمة المرور',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Remember Me & Forgot Password
-                      if (_isLogin)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
-                                  activeColor: AppTheme.primaryGreen,
-                                ),
-                                Text(
-                                  'تذكرني',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () => _showForgotPasswordDialog(),
-                              child: Text(
-                                'نسيت كلمة المرور؟',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                    // Logo
+                    Center(
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: AppTheme.primaryGradient,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryGreen.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
                             ),
                           ],
                         ),
-
-                      const SizedBox(height: 24),
-
-                      // Main Button
-                      ElevatedButton(
-                        onPressed: () => Get.offNamed('/home'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                        child: const Icon(
+                          Icons.mosque,
+                          size: 50,
+                          color: Colors.white,
                         ),
-                        child: Text(
-                          _isLogin ? 'تسجيل الدخول' : 'إنشاء حساب',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(duration: 400.ms, delay: 200.ms)
-                          .slideY(begin: 0.2, end: 0),
-
-                      const SizedBox(height: 24),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: AppTheme.sand)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'أو استمر باستخدام',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
-                          Expanded(child: Divider(color: AppTheme.sand)),
-                        ],
                       ),
+                    ).animate().scale(
+                      duration: 600.ms,
+                      curve: Curves.easeOutBack,
+                    ),
 
-                      const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                      // Social Login
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSocialButton(Icons.g_mobiledata, 'Google', Colors.red),
-                          const SizedBox(width: 16),
-                          _buildSocialButton(Icons.facebook, 'Facebook', Colors.blue),
-                          const SizedBox(width: 16),
-                          _buildSocialButton(Icons.apple, 'Apple', Colors.black),
-                        ],
+                    // Title
+                    Text(
+                      _isLogin ? 'login'.tr : 'register'.tr, // 🌟 ترجمة العنوان
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displayMedium,
+                    )
+                        .animate(key: ValueKey(_isLogin))
+                        .fadeIn(duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      _isLogin
+                          ? 'welcome_back'.tr // 🌟 ترجمة نص الترحيب بالدخول
+                          : 'create_account_start'.tr, // 🌟 ترجمة نص البدء لإنشاء الحساب
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Form Fields
+                    if (!_isLogin) ...[
+                      _buildTextField(
+                        key: const ValueKey('name_field'),
+                        controller: _nameController,
+                        hint: 'full_name'.tr, // 🌟 ترجمة الاسم الكامل
+                        icon: Icons.person_outline,
+                        isRtl: isRtl,
                       ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        key: const ValueKey('phone_field'),
+                        controller: _phoneController,
+                        hint: 'phone_number'.tr, // 🌟 ترجمة رقم الهاتف
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        isRtl: isRtl,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
-                      const SizedBox(height: 32),
+                    _buildTextField(
+                      key: const ValueKey('email_field'),
+                      controller: _emailController,
+                      hint: 'email'.tr, // 🌟 ترجمة البريد الإلكتروني
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      isRtl: isRtl,
+                    ),
 
-                      // Toggle Login/Register
+                    const SizedBox(height: 16),
+
+                    _buildTextField(
+                      key: const ValueKey('password_field'),
+                      controller: _passwordController,
+                      hint: 'password'.tr, // 🌟 ترجمة كلمة المرور
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isRtl: isRtl,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Remember Me & Forgot Password
+                    if (_isLogin)
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            _isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: Colors.black,
+                                checkColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Colors.black,
+                                  width: 2,
+                                ),
+                              ),
+                              Text(
+                                'remember_me'.tr, // 🌟 ترجمة تذكرني
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                            ],
                           ),
                           TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _isLogin = !_isLogin;
-                              });
-                            },
+                            onPressed: () => _showForgotPasswordDialog(isRtl),
                             child: Text(
-                              _isLogin ? 'سجل الآن' : 'تسجيل الدخول',
-                              style: const TextStyle(
+                              'forgot_password_q'.tr, // 🌟 ترجمة نسيت كلمة المرور؟
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppTheme.primaryGreen,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -258,39 +188,136 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                    ],
-                  ),
+
+                    const SizedBox(height: 24),
+
+                    // Main Button
+                    ElevatedButton(
+                      onPressed: () => Get.offNamed('/home'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _isLogin ? 'login'.tr : 'register'.tr, // 🌟 ترجمة نص الزر الرئيسي
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: 200.ms)
+                        .slideY(begin: 0.2, end: 0),
+
+                    const SizedBox(height: 24),
+
+                    // Divider
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: AppTheme.sand)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'or_continue_with'.tr, // 🌟 ترجمة أو استمر باستخدام
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.black
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider(color: AppTheme.sand)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Social Login
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildSocialButton(
+                          Icons.g_mobiledata,
+                          'Google',
+                          Colors.red,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildSocialButton(
+                          Icons.facebook,
+                          'Facebook',
+                          Colors.blue,
+                        ),
+                        const SizedBox(width: 16),
+                        _buildSocialButton(Icons.apple, 'Apple', Colors.black),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    // Toggle Login/Register
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isLogin ? 'dont_have_account'.tr : 'already_have_account'.tr, // 🌟 ترجمة نصوص التحويل الفرعية
+                          style: const TextStyle(color: Colors.black),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                            });
+                          },
+                          child: Text(
+                            _isLogin ? 'register_now'.tr : 'login'.tr, // 🌟 ترجمة أزرار التحويل
+                            style: const TextStyle(
+                              color: AppTheme.primaryGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        )
+        ),
+      ),
     );
-    }
+  }
 
   Widget _buildTextField({
-    required Key key, // 🌟 إضافة مفتاح لمنع تداخل قيم الحقول عند التبديل
+    required Key key,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
     TextInputType? keyboardType,
+    required bool isRtl, // مررنا حالة اتجاه اللغة للحقل
   }) {
     return TextField(
       key: key,
       controller: controller,
       obscureText: isPassword ? _obscurePassword : false,
       keyboardType: keyboardType,
-      textAlign: TextAlign.right,
+      // 🌟 محاذاة النص تتغير تلقائياً حسب لغة الواجهة الحالية لإصلاح المظهر الإنجليزي والعربي
+      textAlign: isRtl ? TextAlign.right : TextAlign.left,
       decoration: InputDecoration(
         hintText: hint,
-        // 🌟 جعل أيقونة التوضيح في اليمين (suffix) بدلاً من اليمين المعكوس لتناسب الـ RTL العربي
-        suffixIcon: Icon(icon, color: AppTheme.primaryGreen.withOpacity(0.6)),
-        prefixIcon: isPassword
+        hintStyle: const TextStyle(color: Colors.black),
+        // 🌟 نستخدم prefixIcon للأيقونة الأساسية و suffixIcon لأيقونة الرؤية لكي يتناسب الانقلاب البصري مع الـ LTR والـ RTL تلقائياً
+        prefixIcon: Icon(icon, color: Colors.black),
+        fillColor: const Color(0x158B9EE0),
+        suffixIcon: isPassword
             ? IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: AppTheme.primaryGreen.withOpacity(0.6),
+            color: Colors.black,
           ),
           onPressed: () {
             setState(() {
@@ -300,10 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
         )
             : null,
       ),
-    )
-        .animate(key: key)
-        .fadeIn(duration: 400.ms)
-        .slideX(begin: 0.1, end: 0);
+    ).animate(key: key).fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0);
   }
 
   Widget _buildSocialButton(IconData icon, String label, Color color) {
@@ -329,41 +353,42 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showForgotPasswordDialog() {
+  void _showForgotPasswordDialog(bool isRtl) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'استعادة كلمة المرور',
+          'reset_password'.tr, // 🌟 ترجمة استعادة كلمة المرور
           style: Theme.of(context).textTheme.headlineLarge,
           textAlign: TextAlign.center,
         ),
         content: Directionality(
-          textDirection: TextDirection.rtl, // 🌟 ضبط اتجاه نافذة الحوار للعربية
+          textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, // 🌟 ضبط مرن لاتجاه الحوار
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'أدخل بريدك الإلكتروني لإرسال رمز التحقق',
+                'enter_email_reset_desc'.tr, // 🌟 ترجمة أدخل بريدك الإلكتروني...
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
               TextField(
-                textAlign: TextAlign.right,
+                textAlign: isRtl ? TextAlign.right : TextAlign.left,
                 decoration: InputDecoration(
-                  hintText: 'البريد الإلكتروني',
-                  suffixIcon: Icon(Icons.email_outlined, color: AppTheme.primaryGreen.withOpacity(0.6)),
+                  hintText: 'email'.tr, // 🌟 ترجمة حقل الإيميل داخل الديالوج
+                  prefixIcon: const Icon(
+                    Icons.email_outlined,
+                    color: Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              // Verification Code Label
               Text(
-                'رمز التحقق الافتراضي',
+                'default_verification_code'.tr, // 🌟 ترجمة رمز التحقق الافتراضي
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 8),
-              // Verification Code Visual Placeholders
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(4, (index) {
@@ -378,7 +403,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Center(
                       child: Text(
                         '5',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   );
@@ -389,13 +418,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('إلغاء'),
+              onPressed: () => Get.back(),
+              child: Text('cancel'.tr, style: const TextStyle(color: AppTheme.primaryGreen)) // 🌟 ترجمة إلغاء
           ),
           ElevatedButton(
             onPressed: () => Get.back(),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen),
-            child: const Text('إرسال', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryGreen,
+            ),
+            child: Text('send'.tr, style: const TextStyle(color: Colors.white)), // 🌟 ترجمة إرسال
           ),
         ],
       ),

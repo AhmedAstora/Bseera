@@ -1,3 +1,4 @@
+import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
@@ -9,46 +10,52 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _slideAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    // تهيئة الـ Controller مركزياً لضمان استقرار التطبيق ومنع الأخطاء السابقة
+    Get.put(ProfileController(), permanent: true);
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
+    // أنميشن الظهور النقي (Fade)
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    // أنميشن التكبير الفاخر (Scale) مع ارتداد لطيف جداً في النهاية
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutBack),
+        curve: const Interval(0.1, 0.7, curve: Curves.easeOutBack),
       ),
     );
 
-    _slideAnimation = Tween<double>(begin: 30.0, end: 0.0).animate(
+    // أنميشن الصعود الخفيف للأعلى (Slide) لاستقرار العناصر في المنتصف
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.3, 0.9, curve: Curves.easeOut),
+        curve: const Interval(0.15, 0.8, curve: Curves.fastOutSlowIn),
       ),
     );
 
     _controller.forward();
 
-    // Navigate after animation completes - optimized timing
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    // وقت الانتظار المطور والانتقال السلس لصفحة الـ Onboarding
+    Future.delayed(const Duration(milliseconds: 3000), () {
       if (mounted) {
         Get.offNamed('/onboarding');
       }
@@ -64,149 +71,145 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFF0F1713), // خلفية ملكية داكنة (الأخضر الزيتوني العميق)
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Left side - Kaaba image with gradient overlay
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.45,
+          // 1. هالة ضوئية دائرية خلفية (Radial Gradient) لتفادي جمود الخلفية وإعطاء لمسة فخامة في المنتصف
+          Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=600',
-                  ),
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerLeft,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      const Color(0xFF1A1A2E).withAlpha(200),
-                    ],
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                  ),
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 0.6,
+                  colors: [
+                    AppTheme.primaryGreen.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
           ),
 
-          // Right side - Content
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: MediaQuery.of(context).size.width * 0.6,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Logo text with animation
-                      Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: Column(
-                            children: [
-                              // Arabic text "إسلامي" or "بصيرة"
-                              Text(
-                                'بصيرة',
-                                style: TextStyle(
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.gold,
-                                  letterSpacing: 4,
-                                  shadows: [
-                                    Shadow(
-                                      color: AppTheme.gold.withAlpha(100),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Subtitle
-                              Text(
-                                'Baseera',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w300,
-                                  color: Colors.white.withAlpha(180),
-                                  letterSpacing: 8,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              // Tagline
-                              Text(
-                                'تطبيق إسلامي شامل',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white.withAlpha(150),
-                                  letterSpacing: 2,
-                                ),
-                              ),
-                            ],
+          // 2. المحتوى الرئيسي متمركز تماماً في سنتر الشاشة
+          Center(
+            child: SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // ليأخذ العمود حجم محتواه فقط ويتمركز بدقة
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // أيقونة مسجد تعبيرية مدمجة كشعار علوي فخم
+                          Icon(
+                            Icons.mosque_outlined,
+                            size: 64, // تكبير الحجم لتناسب التصميم المركزي
+                            color: AppTheme.gold.withOpacity(0.85),
                           ),
-                        ),
+                          const SizedBox(height: 24),
+
+                          // 🌟 اسم التطبيق مترجم فورياً حسب لغة النظام
+                          Text(
+                            'app_name'.tr,
+                            style: TextStyle(
+                              fontSize: 56,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.gold,
+                              fontFamily: 'Cairo',
+                              letterSpacing: 1,
+                              shadows: [
+                                Shadow(
+                                  color: AppTheme.gold.withOpacity(0.3),
+                                  blurRadius: 35,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // الاسم بالإنجليزية ثابت لأن لغته إنجليزية بالفعل ولا يحتاج ترجمة
+                          Text(
+                            'B S E E R A',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withOpacity(0.7),
+                              letterSpacing: 8,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // خط فاصل زخرفي ناعم يتلاشى من الأطراف
+                          Container(
+                            width: 80,
+                            height: 1.5,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.transparent, AppTheme.gold.withOpacity(0.5), Colors.transparent],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 🌟 الوصف الفرعي للتطبيق أصبح مترجماً (تأكدي من إضافة المفتاح 'app_description' في ملف الترجمة)
+                          Text(
+                            'app_description'.tr,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w300,
+                              color: Colors.white.withOpacity(0.45),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
 
-          // Loading indicator at bottom
+          // 3. الجزء السفلي: مؤشر التحميل بتصميم ناعم ومستقر في أسفل الشاشة
           Positioned(
-            bottom: 60,
+            bottom: 50,
             left: 0,
             right: 0,
             child: Center(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _fadeAnimation.value,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppTheme.gold.withAlpha(180),
-                            ),
-                            strokeWidth: 2,
-                            backgroundColor: Colors.white.withAlpha(30),
-                          ),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 26,
+                      height: 26,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.gold.withOpacity(0.6),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'جاري التحميل...',
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(120),
-                            fontSize: 12,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
+                        strokeWidth: 2,
+                        backgroundColor: Colors.white.withOpacity(0.03),
+                      ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 12),
+                    // 🌟 نص جاري التحميل أصبح مترجماً فورياً
+                    Text(
+                      'loading'.tr,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

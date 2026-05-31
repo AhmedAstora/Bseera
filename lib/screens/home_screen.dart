@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:adhan/adhan.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import 'quran_screen.dart';
 import 'prayer_times_screen.dart';
@@ -17,12 +21,76 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Map<String, dynamic>> _navItems = [
-    {'icon': Icons.home, 'label': 'الرئيسية'},
-    {'icon': Icons.menu_book, 'label': 'القرآن'},
-    {'icon': Icons.self_improvement, 'label': 'الصلاة'},
-    {'icon': Icons.person, 'label': 'حسابي'},
-  ];
+  // متغيرات مواقيت الصلاة الديناميكية
+  double _latitude = 31.7683;
+  double _longitude = 35.2137;
+  bool _isLoadingPrayers = true;
+  Timer? _timeTimer;
+
+  String _fajrTime = '04:30';
+  String _dhuhrTime = '12:15';
+  String _asrTime = '15:45';
+  String _maghribTime = '18:20';
+  String _ishaTime = '19:45';
+  String _currentPrayerName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocationAndCalculate();
+    // مؤقت لتحديث الوقت والتاريخ في الواجهة كل دقيقة تلقائياً
+    _timeTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timeTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _getUserLocationAndCalculate() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      }
+    } catch (e) {
+      debugPrint('Error fetching location: $e');
+    } finally {
+      _calculatePrayers();
+    }
+  }
+
+  void _calculatePrayers() {
+    final coordinates = Coordinates(_latitude, _longitude);
+    final params = CalculationMethod.muslim_world_league.getParameters();
+    params.madhab = Madhab.shafi;
+    final now = DateTime.now();
+    final prayerTimesData = PrayerTimes(coordinates, DateComponents.from(now), params);
+
+    final String currentLangCode = Get.locale?.languageCode ?? 'ar';
+    final timeFormat = DateFormat('hh:mm'); // تنسيق الكروت الأصلي الخاص بك
+
+    if (mounted) {
+      setState(() {
+        _fajrTime = timeFormat.format(prayerTimesData.fajr.toLocal());
+        _dhuhrTime = timeFormat.format(prayerTimesData.dhuhr.toLocal());
+        _asrTime = timeFormat.format(prayerTimesData.asr.toLocal());
+        _maghribTime = timeFormat.format(prayerTimesData.maghrib.toLocal());
+        _ishaTime = timeFormat.format(prayerTimesData.isha.toLocal());
+
+        _currentPrayerName = prayerTimesData.currentPrayer().name;
+        _isLoadingPrayers = false;
+      });
+    }
+  }
 
   Widget _getCurrentBody() {
     switch (_selectedIndex) {
@@ -33,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const PrayerTimesScreen();
       case 3:
-        return const ProfileScreen();
+        return ProfileScreen();
       default:
         return _buildHomeContent();
     }
@@ -41,7 +109,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🌟 تم تعديل السطر بالأسفل ليصبح TextDirection.RTL بحروف كبيرة لحل خطأ البناء تماماً
+    // 🌟 فحص اتجاه اللغة الحالية ديناميكياً للتطبيق
+    final bool isRtl = Get.locale?.languageCode == 'ar';
+
+    // 🌟 نقل قائمة التنقل إلى هنا لتقرأ الـ .tr بشكل ديناميكي متجدد عند تبديل اللغة
+    final List<Map<String, dynamic>> _navItems = [
+      {'icon': Icons.home, 'label': 'home'.tr},
+      {'icon': Icons.menu_book, 'label': 'quran'.tr},
+      {'icon': Icons.self_improvement, 'label': 'prayer'.tr},
+      {'icon': Icons.person, 'label': 'profile'.tr},
+    ];
+
     return Scaffold(
       body: _getCurrentBody(),
       bottomNavigationBar: Container(
@@ -78,9 +156,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeContent() {
     final now = DateTime.now();
-    final hijriDate = 'الجمعة 28 رمضان 1445';
+    final bool isRtl = Get.locale?.languageCode == 'ar';
+
+    // ضبط لغة التنسيق لعرض الوقت والتاريخ بشكل متوافق (AM/PM مقابل ص/م)
+    final String currentLangCode = Get.locale?.languageCode ?? 'ar';
     final time = DateFormat('hh:mm').format(now);
-    final period = DateFormat('a').format(now);
+    final period = DateFormat('a', currentLangCode).format(now);
+
+    // تهيئة وعرض التاريخ الهجري والملادي حسب لغة التطبيق الحالية
+    final hijriDate = "${HijriCalendar.now().toFormat(isRtl ? "DD, dd MMMM yyyy" : "dd MMMM yyyy")} ${'hijri_symbol'.tr}";
 
     return CustomScrollView(
       slivers: [
@@ -130,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800'),
+                          image: AssetImage('assets/images/logo.png'),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -150,16 +234,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'السلام عليكم ورحمة الله وبركاته',
-                                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 18,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  textAlign: TextAlign.center,
+                                  'islamic_greeting'.tr, // 🌟 ترجمة السلام عليكم...
+                                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'أهلاً بك في تطبيق إسلامي',
+                                'welcome_bseera'.tr, // 🌟 ترجمة أهلاً بكم في تطبيق بصيرة
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Colors.white.withOpacity(0.9),
                                 ),
@@ -180,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          time,
+                          time.tr,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 36,
@@ -189,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          period,
+                          period.tr,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.8),
                             fontSize: 18,
@@ -199,8 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     Text(
-                      hijriDate,
-                      style: TextStyle(
+                      hijriDate.tr,
+                      style: const TextStyle(
                         color: AppTheme.gold,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -231,8 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildQuickAction(
                       icon: Icons.menu_book,
-                      title: 'القرآن الكريم',
-                      subtitle: 'اقرأ واستمع',
+                      title: 'quran_kareem'.tr, // 🌟 مترجم سابقاً
+                      subtitle: 'read_and_listen'.tr, // 🌟 ترجمة اقرأ واستمع
                       color: AppTheme.primaryGreen,
                       onTap: () {
                         setState(() {
@@ -242,8 +330,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _buildQuickAction(
                       icon: Icons.access_time_filled,
-                      title: 'مواقيت الصلاة',
-                      subtitle: 'الصلاة القادمة',
+                      title: 'prayer_times'.tr, // 🌟 مترجم سابقاً
+                      subtitle: 'next_prayer'.tr, // 🌟 ترجمة الصلاة القادمة
                       color: AppTheme.teal,
                       onTap: () {
                         setState(() {
@@ -253,15 +341,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     _buildQuickAction(
                       icon: Icons.format_list_bulleted,
-                      title: 'الأذكار',
-                      subtitle: 'أذكار اليوم',
+                      title: 'azkar_title'.tr, // 🌟 ترجمة الأذكار
+                      subtitle: 'today_azkar'.tr, // 🌟 ترجمة أذكار اليوم
                       color: AppTheme.gold,
                       onTap: () => Get.toNamed('/azkar'),
                     ),
                     _buildQuickAction(
                       icon: Icons.fingerprint,
-                      title: 'التسبيح',
-                      subtitle: 'المسبحة الإلكترونية',
+                      title: 'tasbeeh_title'.tr, // 🌟 ترجمة التسبيح
+                      subtitle: 'electronic_rosary'.tr, // 🌟 ترجمة المسبحة الإلكترونية
                       color: AppTheme.navy,
                       onTap: () => Get.toNamed('/tasbeeh'),
                     ),
@@ -274,28 +362,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
 
                 // Daily Hadith
-                _buildSectionTitle('حديث اليوم'),
+                _buildSectionTitle('hadith_today'.tr), // 🌟 ترجمة عنوان حديث اليوم
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        AppTheme.primaryGreen.withOpacity(0.1),
-                        AppTheme.gold.withOpacity(0.1),
+                        AppTheme.primaryGreen,
+                        AppTheme.gold,
                       ],
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
+                      stops: [0.0, 1.0],
+                      begin: Alignment.bottomRight,
+                      end: Alignment.topLeft,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppTheme.primaryGreen.withOpacity(0.2),
+                      color: AppTheme.primaryGreen.withOpacity(0.4),
                     ),
                   ),
                   child: Column(
                     children: [
                       Text(
-                        'قال رسول الله صلى الله عليه وسلم: "من صلى علي صلاة واحدة صلى الله عليه عشر صلوات"',
+                        'hadith_content'.tr, // 🌟 ترجمة متن الحديث النبوي
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           height: 1.8,
@@ -304,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'رواه مسلم',
+                        'hadith_narrator'.tr, // 🌟 ترجمة الراوي (رواه مسلم)
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.primaryGreen,
                           fontWeight: FontWeight.w600,
@@ -319,20 +408,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // Prayer Times Summary
-                _buildSectionTitle('مواقيت الصلاة اليوم'),
+                // Prayer Times Summary (تعمل ديناميكياً الآن بألوانك الأصلية الفاتحة)
+                _buildSectionTitle('today_prayer_times'.tr), // 🌟 ترجمة مواقيت الصلاة اليوم
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 100,
-                  child: ListView(
+                  child: _isLoadingPrayers
+                      ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
+                      : ListView(
                     scrollDirection: Axis.horizontal,
-                    reverse: true, // يضمن بدء التمرير من اليمين في الاتجاه العربي
+                    reverse: isRtl, // 🌟 مرونة بدء التمرير الأفقي: يبدأ من اليمين في العربية ومن اليسار في الإنجليزية
                     children: [
-                      _buildPrayerTimeCard('الفجر', '04:30', Icons.wb_twilight, true),
-                      _buildPrayerTimeCard('الظهر', '12:15', Icons.wb_sunny, false),
-                      _buildPrayerTimeCard('العصر', '15:45', Icons.wb_cloudy, false),
-                      _buildPrayerTimeCard('المغرب', '18:20', Icons.nights_stay, false),
-                      _buildPrayerTimeCard('العشاء', '19:45', Icons.bedtime, false),
+                      _buildPrayerTimeCard('fajr'.tr, _fajrTime, Icons.wb_twilight, _currentPrayerName == 'fajr'), // 🌟 ترجمة الصلوات الخمس
+                      _buildPrayerTimeCard('dhuhr'.tr, _dhuhrTime, Icons.wb_sunny, _currentPrayerName == 'dhuhr'),
+                      _buildPrayerTimeCard('asr'.tr, _asrTime, Icons.wb_cloudy, _currentPrayerName == 'asr'),
+                      _buildPrayerTimeCard('maghrib'.tr, _maghribTime, Icons.nights_stay, _currentPrayerName == 'maghrib'),
+                      _buildPrayerTimeCard('isha'.tr, _ishaTime, Icons.bedtime, _currentPrayerName == 'isha'),
                     ],
                   ),
                 )
@@ -343,29 +434,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
 
                 // Books Section
-                _buildSectionTitle('كتب إسلامية'),
+                _buildSectionTitle('islamic_books'.tr), // 🌟 ترجمة كتب إسلامية
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 200,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
-                    reverse: true, // يضمن ترتيب الكتب من اليمين إلى اليسار بشكل صحيح
+                    reverse: isRtl, // 🌟 مرونة الترتيب من اليمين لليسار حسب لغة الواجهة الحالية
                     children: [
-                      _buildBookCard(
-                        'لا تحزن',
-                        'عائض القرني',
-                        'https://images.unsplash.com/photo-1589998059171-988d887df646?w=400',
-                      ),
-                      _buildBookCard(
-                        'سورة البقرة',
-                        'علمتني',
-                        'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400',
-                      ),
-                      _buildBookCard(
-                        'الأذكار',
-                        'الإمام النووي',
-                        'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400',
-                      ),
+                      _buildBookCard('assets/images/book3.png'),
+                      _buildBookCard('assets/images/book1.png'),
+                      _buildBookCard('assets/images/book2.png'),
                     ],
                   ),
                 )
@@ -396,7 +475,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -450,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: const TextStyle(color: Colors.black, fontSize: 12),
             ),
           ],
         ),
@@ -507,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBookCard(String title, String author, String imageUrl) {
+  Widget _buildBookCard(String imageUrl) {
     return Container(
       width: 150,
       margin: const EdgeInsets.only(left: 16),
@@ -522,40 +601,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
-              imageUrl,
-              height: 100,
-              width: 150,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  author,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        child: Image.asset(
+          imageUrl,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }

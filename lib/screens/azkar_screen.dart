@@ -134,10 +134,11 @@ class _AzkarScreenState extends State<AzkarScreen> {
           SliverToBoxAdapter(
             child: Column(
               children: [
-                // Category Tabs
+                SizedBox(
+                  height: 24,
+                ),
                 Container(
-                  height: 100,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  height: 95,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),

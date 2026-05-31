@@ -1,5 +1,8 @@
+import 'package:bseera/main.dart';
+import 'package:bseera/utils/translate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:get/get.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -18,8 +21,11 @@ import 'screens/profile_screen.dart';
 import 'theme/app_theme.dart';
 import 'utils/performance_optimizer.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // تهيئة بيانات التواريخ للغة العربية لمنع انهيار شاشة مواقيت الصلاة
+  await initializeDateFormatting('ar_EG', null);
 
   // Performance optimizations
   PerformanceOptimizer.optimize();
@@ -33,6 +39,8 @@ void main() {
   runApp(const IslamicApp());
 }
 
+
+
 class IslamicApp extends StatelessWidget {
   const IslamicApp({super.key});
 
@@ -44,11 +52,15 @@ class IslamicApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      locale: const Locale('en', 'US'),
-      fallbackLocale: const Locale('en', 'US'),
+
+      // 🌟 2. تعديل الأسطر الخاصة باللغة والترجمة هنا:
+      translations: AppTranslations(), // ربط كلاس الترجمة الذي أنشأناه في الأعلى
+      locale: const Locale('en', 'AE'), // تغيير اللغة الافتراضية للتطبيق لتصبح العربية أولاً
+      fallbackLocale: const Locale('en', 'AE'), // اللغة الاحتياطية في حال حدوث خطأ هي العربية
+
       // Performance settings
       defaultTransition: Transition.fade,
-      transitionDuration: const Duration(milliseconds: 200),
+      transitionDuration: const Duration(milliseconds: 250),
       getPages: [
         GetPage(name: '/splash', page: () => const SplashScreen()),
         GetPage(name: '/onboarding', page: () => const OnboardingScreen()),
@@ -63,7 +75,7 @@ class IslamicApp extends StatelessWidget {
         GetPage(name: '/quran-reader', page: () => const QuranReaderScreen()),
         GetPage(name: '/azkar', page: () => const AzkarScreen()),
         GetPage(name: '/tasbeeh', page: () => const TasbeehScreen()),
-        GetPage(name: '/profile', page: () => const ProfileScreen()),
+        GetPage(name: '/profile', page: () =>  ProfileScreen()),
       ],
       initialRoute: '/splash',
       builder: (context, child) {

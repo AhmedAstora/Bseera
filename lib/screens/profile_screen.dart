@@ -1,216 +1,228 @@
+import 'dart:io';
 import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
-   ProfileScreen({super.key});
-   final ProfileController controller = Get.put(ProfileController());
+  ProfileScreen({super.key});
+  final ProfileController controller = Get.put(ProfileController());
+
   @override
   Widget build(BuildContext context) {
+    // 🌟 فحص اتجاه اللغة الحالية ديناميكياً للتطبيق
+    final bool isRtl = Get.locale?.languageCode == 'ar';
+
+    // مصفوفة الأنشطة تم نقلها هنا لتقرأ مفاتيح الترجمة .tr ديناميكياً عند التغيير
+    final List<Map<String, dynamic>> activities = [
+      {'title': 'activity_quran'.tr, 'time': 'today'.tr, 'icon': Icons.menu_book},
+      {'title': 'activity_hadith'.tr, 'time': 'yesterday'.tr, 'icon': Icons.format_quote},
+      {'title': 'activity_tasbeeh'.tr, 'time': 'days_ago_2'.tr, 'icon': Icons.self_improvement},
+      {'title': 'activity_book'.tr, 'time': 'days_ago_3'.tr, 'icon': Icons.auto_stories},
+      {'title': 'activity_memorize'.tr, 'time': 'week_ago'.tr, 'icon': Icons.school},
+    ];
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 220,
-            floating: false,
-            pinned: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Get.back(),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
-                onPressed: () => Get.toNamed('/settings'),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
+      body: Directionality(
+        // 🌟 ضبط اتجاه واجهة الشاشة بالكامل حسب اللغة الحالية
+        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 220,
+              floating: false,
+              pinned: true,
+              // يظهر زر العودة فقط في حال لم تكن الشاشة تابعة للـ BottomNavigationBar الرئيسي
+              automaticallyImplyLeading: Navigator.canPop(context),
+              leading: Navigator.canPop(context)
+                  ? IconButton(
+                icon: Icon(isRtl ? Icons.arrow_back : Icons.arrow_forward, color: Colors.white),
+                onPressed: () => Get.back(),
+              )
+                  : null,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white),
+                  onPressed: () => Get.toNamed('/settings'),
                 ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.2),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
-                            width: 3,
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: SafeArea(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 40),
+                        Obx(() {
+                          return CircleAvatar(
+                            radius: 60,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: controller.profileImagePath.value.isNotEmpty
+                                ? FileImage(File(controller.profileImagePath.value)) as ImageProvider
+                                : const AssetImage('assets/images/book1.png') as ImageProvider,
+                          );
+                        }),
+                        Obx(() => Text(
+                          controller.name.value,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )),
+                        Obx(() => Text(
+                          controller.email.value,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats Cards
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.menu_book,
+                            value: '12',
+                            label: 'surahs_completed'.tr, // 🌟 ترجمة سورة ختمتها
+                            color: AppTheme.primaryGreen,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Colors.white,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.timer,
+                            value: '45',
+                            label: 'reading_hours'.tr, // 🌟 ترجمة ساعة قراءة
+                            color: AppTheme.teal,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Obx(()=>Text(
-                        controller.name.value,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            icon: Icons.self_improvement,
+                            value: '1.2K',
+                            label: 'tasbeeh_count'.tr, // 🌟 ترجمة تسبيحة
+                            color: AppTheme.gold,
+                          ),
                         ),
-                      )),
-                  Obx(()=>Text(
-                     controller.email.value,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Recent Activity
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppTheme.gold,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      )),
-                    ],
-                  ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'recent_activity'.tr, // 🌟 ترجمة النشاط الأخير
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: activities.length,
+                      itemBuilder: (context, index) {
+                        return _buildActivityItem(activities[index], isRtl);
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Quick Actions
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppTheme.gold,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'quick_actions'.tr, // 🌟 ترجمة إجراءات سريعة
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.5,
+                      children: [
+                        _buildQuickAction(
+                          icon: Icons.bookmark,
+                          title: 'bookmarks'.tr, // 🌟 ترجمة الإشارات المرجعية
+                          color: AppTheme.primaryGreen,
+                          onTap: () {},
+                        ),
+                        _buildQuickAction(
+                          icon: Icons.history,
+                          title: 'reading_history'.tr, // 🌟 ترجمة سجل القراءة
+                          color: AppTheme.teal,
+                          onTap: () {},
+                        ),
+                        _buildQuickAction(
+                          icon: Icons.favorite,
+                          title: 'favorites'.tr, // 🌟 ترجمة المفضلة
+                          color: AppTheme.gold,
+                          onTap: () {},
+                        ),
+                        _buildQuickAction(
+                          icon: Icons.settings,
+                          title: 'settings_title'.tr, // 🌟 ترجمة الإعدادات
+                          color: AppTheme.navy,
+                          onTap: () => Get.toNamed('/settings'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats Cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.menu_book,
-                          value: '12',
-                          label: 'سورة ختمتها',
-                          color: AppTheme.primaryGreen,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.timer,
-                          value: '45',
-                          label: 'ساعة قراءة',
-                          color: AppTheme.teal,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.self_improvement,
-                          value: '1.2K',
-                          label: 'تسبيحة',
-                          color: AppTheme.gold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Recent Activity
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: AppTheme.gold,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'النشاط الأخير',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 5,
-                    itemBuilder: (context, index) {
-                      return _buildActivityItem(index);
-                    },
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Quick Actions
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: AppTheme.gold,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'إجراءات سريعة',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _buildQuickAction(
-                        icon: Icons.bookmark,
-                        title: 'الإشارات المرجعية',
-                        color: AppTheme.primaryGreen,
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.history,
-                        title: 'سجل القراءة',
-                        color: AppTheme.teal,
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.favorite,
-                        title: 'المفضلة',
-                        color: AppTheme.gold,
-                        onTap: () {},
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.settings,
-                        title: 'الإعدادات',
-                        color: AppTheme.navy,
-                        onTap: () => Get.toNamed('/settings'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -267,17 +279,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityItem(int index) {
-    final activities = [
-      {'title': 'ختمت سورة البقرة', 'time': 'اليوم', 'icon': Icons.menu_book},
-      {'title': 'قراءة 5 أحاديث', 'time': 'أمس', 'icon': Icons.format_quote},
-      {'title': 'تسبيح 100 مرة', 'time': 'منذ 2 يوم', 'icon': Icons.self_improvement},
-      {'title': 'قراءة كتاب فاتحون صلاة', 'time': 'منذ 3 أيام', 'icon': Icons.auto_stories},
-      {'title': 'حفظ 3 آيات جديدة', 'time': 'منذ أسبوع', 'icon': Icons.school},
-    ];
-
-    final activity = activities[index % activities.length];
-
+  Widget _buildActivityItem(Map<String, dynamic> activity, bool isRtl) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -297,12 +299,12 @@ class ProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withOpacity(0.1),
+              color: AppTheme.primaryGreen.withOpacity(0.6),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               activity['icon'] as IconData,
-              color: AppTheme.primaryGreen,
+              color: Colors.black,
               size: 24,
             ),
           ),
@@ -315,6 +317,7 @@ class ProfileScreen extends StatelessWidget {
                   activity['title'] as String,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
+                    color: Colors.black,
                     fontSize: 14,
                   ),
                 ),
@@ -329,9 +332,10 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+          // 🌟 تدويل أيقونة المؤشر الجانبي لتناسب اتجاه اللغة
           Icon(
-            Icons.arrow_forward_ios,
-            color: AppTheme.primaryGreen.withOpacity(0.5),
+            isRtl ? Icons.arrow_back_ios_new : Icons.arrow_forward_ios,
+            color: AppTheme.primaryGreen,
             size: 16,
           ),
         ],
