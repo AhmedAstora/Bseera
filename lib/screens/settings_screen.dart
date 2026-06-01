@@ -79,9 +79,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               pinned: true,
               automaticallyImplyLeading: false,
               leading: IconButton(
-                icon: Icon(
-                  isRtl ? Icons.arrow_back : Icons.arrow_forward,
-                  color: Colors.white,
+                icon: // هذا الكود يوضع داخل الـ Row في دالة _buildActionItem
+                Directionality(
+                  // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
+                  textDirection: Get.locale?.languageCode == 'ar'
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_back, color: Colors.white),
+                    ],
+                  ),
                 ),
                 onPressed: () => Get.back(),
               ),
@@ -114,6 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldDark,width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -139,7 +148,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               controller.name.value,
                             ),
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildProfileItem(
                             icon: Icons.email_outlined,
                             title: 'email'.tr,
@@ -155,14 +170,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               controller.email.value,
                             ),
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildProfileItem(
                             icon: Icons.camera_alt_outlined,
                             title: 'profile_image'.tr,
                             subtitle: 'tap_to_edit'.tr,
                             onTap: () => _showEditImageDialog(),
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildProfileItem(
                             icon: Icons.phone_outlined,
                             title: 'phone_number'.tr,
@@ -172,7 +199,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               '+970598358225',
                             ),
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildProfileItem(
                             icon: Icons.lock_outline,
                             title: 'change_password'.tr,
@@ -193,6 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldDark,width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -223,7 +257,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               }
                             },
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildDropdownItem(
                             icon: Icons.language,
                             title: 'language'.tr,
@@ -257,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldDark,width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -278,7 +319,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               });
                             },
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildSwitchItem(
                             icon: Icons.location_on_outlined,
                             title: 'location_title'.tr,
@@ -304,6 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldDark,width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -320,21 +368,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             isRtl: isRtl,
                             onTap: () {},
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildActionItem(
                             icon: Icons.contact_support_outlined,
                             title: 'contact_us'.tr,
                             isRtl: isRtl,
                             onTap: () {},
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildActionItem(
                             icon: Icons.info_outline,
                             title: 'about_us'.tr,
                             isRtl: isRtl,
                             onTap: () {},
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildActionItem(
                             icon: Icons.share_outlined,
                             title: 'share_app'.tr,
@@ -355,6 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.goldDark,width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -371,7 +438,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: AppTheme.warning,
                             onTap: () => _showLogoutDialog(),
                           ),
-                          const Divider(height: 24),
+                          const Divider(height: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                            ),
+                          ),
+                          const Divider(height: 12),
                           _buildDangerItem(
                             icon: Icons.delete_forever,
                             title: 'delete_account'.tr,
@@ -552,7 +625,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: item,
               child: Text(
                 item,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey,)
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
             );
           }).toList(),
@@ -590,10 +665,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
             ),
-            Icon(
-              isRtl ? Icons.arrow_back_ios_new : Icons.arrow_forward_ios,
-              color: Colors.black,
-              size: 16,
+            Directionality(
+              // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
+              textDirection: Get.locale?.languageCode == 'ar'
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              child: Row(
+                children: [
+                  Icon(Icons.arrow_forward_ios, color: Colors.black,size: 15,),
+                ],
+              ),
             ),
           ],
         ),

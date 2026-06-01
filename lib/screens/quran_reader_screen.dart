@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:quran/quran.dart' as quran;
 
 class QuranReaderScreen extends StatefulWidget {
   const QuranReaderScreen({super.key});
@@ -13,25 +13,14 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   late PageController _pageController;
   int _currentPage = 1;
   bool _isInitialized = false;
-
-  // المصحف الشريف يتكون من 604 صفحة ثابتة
+  bool _showSystemUI = true;
   final int _totalQuranPages = 604;
 
-  // 🗺️ خريطة ذكية لربط السور بالصفحات (مصحف المدينة المنورة الحقيقي)
-  final Map<int, int> _surahToPageMap = {
-    1: 1, 2: 2, 3: 50, 4: 77, 5: 106, 6: 128, 7: 151, 8: 177, 9: 187, 10: 208,
-    11: 221, 12: 235, 13: 249, 14: 255, 15: 262, 16: 267, 17: 282, 18: 293, 19: 305, 20: 312,
-    21: 322, 22: 332, 23: 342, 24: 350, 25: 359, 26: 367, 27: 377, 28: 385, 29: 396, 30: 404,
-    31: 411, 32: 415, 33: 418, 34: 428, 35: 434, 36: 440, 37: 446, 38: 453, 39: 458, 40: 467,
-    41: 477, 42: 483, 43: 489, 44: 496, 45: 499, 46: 502, 47: 507, 48: 511, 49: 515, 50: 518,
-    51: 520, 52: 523, 53: 526, 54: 528, 55: 531, 56: 534, 57: 537, 58: 542, 59: 545, 60: 549,
-    61: 551, 62: 553, 63: 554, 64: 556, 65: 558, 66: 560, 67: 562, 68: 564, 69: 566, 70: 568,
-    71: 570, 72: 572, 73: 574, 74: 575, 75: 577, 76: 578, 77: 580, 78: 582, 79: 583, 80: 585,
-    81: 586, 82: 587, 83: 587, 84: 589, 85: 590, 86: 591, 87: 591, 88: 592, 89: 593, 90: 594,
-    91: 595, 92: 595, 93: 596, 94: 596, 95: 597, 96: 597, 97: 598, 98: 598, 99: 599, 100: 599,
-    101: 600, 102: 600, 103: 601, 104: 601, 105: 601, 106: 602, 107: 602, 108: 602, 109: 603, 110: 603,
-    111: 603, 112: 604, 113: 604, 114: 604
-  };
+  final Color goldColor = const Color(0xFFC5A059);
+  final Color paperColor = const Color(0xFFFFFFFF);
+  final Color darkBgColor = const Color(0xFF000000);
+  final Color darkTextColor = const Color(0xFFD1CCC0);
+  final Color lightTextColor = const Color(0xFF2C2C2C);
 
   @override
   void initState() {
@@ -41,128 +30,155 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   void _initializePage() {
     final Map<String, dynamic> args = Get.arguments ?? {};
-
-    // استقبال معرف السورة القادم من شاشتك الحالية (QuranScreen)
-    dynamic rawSurahId = args['surah_id'] ?? args['id'] ?? args['number'] ?? 1;
-    int surahId = 1;
-
-    if (rawSurahId is int) {
-      surahId = rawSurahId;
-    } else if (rawSurahId is String) {
-      surahId = int.tryParse(rawSurahId) ?? 1;
-    }
-
-    dynamic rawPageNumber = args['page_number'];
     int targetPage = 1;
-
-    if (rawPageNumber != null) {
-      if (rawPageNumber is int) targetPage = rawPageNumber;
-      if (rawPageNumber is String) targetPage = int.tryParse(rawPageNumber) ?? 1;
-    } else {
-      // مطابقة رقم السورة بصفحتها الصحيحة في المصحف
-      targetPage = _surahToPageMap[surahId] ?? 1;
+    if (args['page_number'] != null) {
+      targetPage = int.tryParse(args['page_number'].toString()) ?? 1;
+    } else if (args['surah_id'] != null) {
+      targetPage = quran.getSurahPages(int.tryParse(args['surah_id'].toString()) ?? 1).first;
     }
-
-    if (targetPage < 1) targetPage = 1;
-    if (targetPage > _totalQuranPages) targetPage = _totalQuranPages;
-
     _currentPage = targetPage;
     _pageController = PageController(initialPage: _currentPage - 1);
-
-    setState(() {
-      _isInitialized = true;
-    });
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  // 🚀 السيرفر الجديد المعدل: خادم فائق السرعة وبجودة عالية جداً لصفحات المصحف الشريف كاملة
-  String _getQuranPageUrl(int pageNumber) {
-    return "https://everyayah.com/data/quranpages_800/%03d.png".replaceFirst('%03d', pageNumber.toString().padLeft(3, '0'));
+    setState(() => _isInitialized = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFFBF9F4),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF0F4C3A))),
-      );
-    }
+    if (!_isInitialized) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    final bool isDark = Get.isDarkMode;
+    final Color bgColor = isDark ? darkBgColor : paperColor;
+    final Color textColor = isDark ? darkTextColor : lightTextColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F4),
-      body: Stack(
+      backgroundColor: bgColor,
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: GestureDetector(
+          onTap: () => setState(() => _showSystemUI = !_showSystemUI),
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: _totalQuranPages,
+                onPageChanged: (index) => setState(() => _currentPage = index + 1),
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                  child: SingleChildScrollView(child: _buildPageContent(index + 1, textColor)),
+                ),
+              ),
+              if (_showSystemUI) ...[
+                _buildHeader(),
+                _buildFooter(), // إضافة التذييل في الأسفل
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // تذييل رقم الصفحة في المنتصف بالأسفل
+  Widget _buildFooter() {
+    return Positioned(
+      bottom: 20,
+      left: 0,
+      right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: goldColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "$_currentPage",
+            style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    bool isAr = Get.locale?.languageCode == 'ar';
+
+    return Positioned(
+      top: 40,
+      left: 20,
+      right: 20,
+      child: Stack(
+        alignment: Alignment.center, // يجعل النص دائماً في المنتصف
         children: [
-          // 1. عارض الصفحات المصورة بكامل الشاشة وبدون تمرير عمودي
-          Positioned.fill(
-            child: SafeArea(
-              child: Directionality(
-                textDirection: TextDirection.rtl, // التصفح يميناً ويساراً كالمصحف الشريف
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _totalQuranPages,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index + 1;
-                    });
-                  },
-                  itemBuilder: (context, index) {
-                    final int pageNum = index + 1;
-
-                    return InteractiveViewer(
-                      maxScale: 4.0, // يتيح تكبير الكلمات بالأصابع
-                      child: Center(
-                        child: CachedNetworkImage(
-                          imageUrl: _getQuranPageUrl(pageNum),
-                          fit: BoxFit.contain, // احتواء كامل وعمودي بدون سكرول
-                          placeholder: (context, url) => const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF0F4C3A),
-                              strokeWidth: 3,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.wifi_off, size: 44, color: Colors.grey),
-                                SizedBox(height: 12),
-                                Text(
-                                  "يرجى التحقق من اتصال الإنترنت",
-                                  style: TextStyle(fontFamily: 'Amiri', fontSize: 16, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-
-          // 2. زر العودة الشفاف في أعلى الزاوية لترك مساحة القراءة ناصعة
+          // 1. السهم: يتحرك مكانه واتجاهه حسب اللغة
           Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 16,
-            child: Opacity(
-              opacity: 0.5,
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Color(0xFF0F4C3A)),
-                  onPressed: () => Get.back(),
-                ),
+            // إذا كانت عربي: السهم في اليمين. إذا إنجليزي: السهم في اليسار
+            right: isAr ? 0 : null,
+            left: isAr ? null : 0,
+            child: IconButton(
+              icon: Icon(
+                // اختيار الأيقونة المناسبة للغة
+                  isAr ?Icons.arrow_back  :Icons.arrow_forward ,
+                  color: goldColor
               ),
+              onPressed: () => Get.back(),
             ),
           ),
+
+          // 2. النص: ثابت في المنتصف دائماً
+          Text(
+            "${isAr ? "الصفحة" : "Page"} $_currentPage",
+            style: TextStyle(
+                color: goldColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontFamily: 'Amiri'
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageContent(int page, Color textColor) {
+    List<dynamic> pageData = quran.getPageData(page);
+    return Column(
+      children: pageData.map((s) {
+        return Column(
+          children: [
+            if (s['start'] == 1) _buildSurahBanner(s['surah']),
+            Text(
+              _getTextForPage(s['surah'], s['start'], s['end']),
+              textAlign: TextAlign.justify,
+              style: TextStyle(fontSize: 23, height: 2.2, fontFamily: 'Amiri', color: textColor,),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  String _getTextForPage(int surah, int start, int end) {
+    String text = "";
+    for (int i = start; i <= end; i++) text += "${quran.getVerse(surah, i, verseEndSymbol: true)} ";
+    return text;
+  }
+
+  Widget _buildSurahBanner(int surah) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Color(0xFFC5A059), width: 2),
+          bottom: BorderSide(color: Color(0xFFC5A059), width: 2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Text("سُورَةُ ${quran.getSurahNameArabic(surah)}",
+              style: const TextStyle(color: Color(0xFFC5A059), fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Amiri')),
+          Text("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+              style: TextStyle(color: const Color(0xFFC5A059).withOpacity(0.8), fontSize: 16, fontFamily: 'Amiri')),
         ],
       ),
     );

@@ -55,8 +55,8 @@ class IslamicApp extends StatelessWidget {
 
       // 🌟 2. تعديل الأسطر الخاصة باللغة والترجمة هنا:
       translations: AppTranslations(), // ربط كلاس الترجمة الذي أنشأناه في الأعلى
-      locale: const Locale('en', 'AE'), // تغيير اللغة الافتراضية للتطبيق لتصبح العربية أولاً
-      fallbackLocale: const Locale('en', 'AE'), // اللغة الاحتياطية في حال حدوث خطأ هي العربية
+      locale: const Locale('ar', 'AE'), // تغيير اللغة الافتراضية للتطبيق لتصبح العربية أولاً
+      fallbackLocale: const Locale('ar', 'AE'), // اللغة الاحتياطية في حال حدوث خطأ هي العربية
 
       // Performance settings
       defaultTransition: Transition.fade,

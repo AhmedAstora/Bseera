@@ -145,7 +145,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               );
                             },
                             // 🌟 قلب اتجاه سهم العودة حسب اللغة
-                            icon: Icon(isRtl ?Icons.arrow_forward  : Icons.arrow_back),
+                            icon: Directionality(
+                              // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
+                              textDirection: Get.locale?.languageCode == 'ar'
+                                  ? TextDirection.rtl
+                                  : TextDirection.ltr,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.arrow_back,),
+                                ],
+                              ),
+                            ),
                             label: Text('previous'.tr), // 🌟 ترجمة "السابق"
                           ),
                         )
@@ -177,10 +187,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 _currentPage < _pages.length - 1 ? 'next'.tr : 'start'.tr,
                               ),
                               const SizedBox(width: 8), // مسافة بين النص والأيقونة
-                              Icon(
-                                _currentPage < _pages.length - 1
-                                    ? (isRtl ? Icons.arrow_back : Icons.arrow_forward) // 🌟 قلب السهم حسب اتجاه اللغة
+                              Directionality(
+                                // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
+                                textDirection: Get.locale?.languageCode == 'ar'
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
+                                child: Row(
+                                  children: [
+                                    Icon(_currentPage < _pages.length - 1?
+                                 Icons.arrow_forward
                                     : Icons.check,
+                              ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),

@@ -34,12 +34,6 @@ class ProfileScreen extends StatelessWidget {
               pinned: true,
               // يظهر زر العودة فقط في حال لم تكن الشاشة تابعة للـ BottomNavigationBar الرئيسي
               automaticallyImplyLeading: Navigator.canPop(context),
-              leading: Navigator.canPop(context)
-                  ? IconButton(
-                icon: Icon(isRtl ? Icons.arrow_back : Icons.arrow_forward, color: Colors.white),
-                onPressed: () => Get.back(),
-              )
-                  : null,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.edit, color: Colors.white),
@@ -62,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
                             backgroundColor: Colors.grey[200],
                             backgroundImage: controller.profileImagePath.value.isNotEmpty
                                 ? FileImage(File(controller.profileImagePath.value)) as ImageProvider
-                                : const AssetImage('assets/images/book1.png') as ImageProvider,
+                                : const AssetImage('assets/images/person.png') as ImageProvider,
                           );
                         }),
                         Obx(() => Text(
@@ -238,6 +232,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.goldDark,width: 2),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.1),
@@ -286,6 +281,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.goldDark,width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -301,6 +297,7 @@ class ProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppTheme.primaryGreen.withOpacity(0.6),
               borderRadius: BorderRadius.circular(12),
+
             ),
             child: Icon(
               activity['icon'] as IconData,
@@ -357,6 +354,7 @@ class ProfileScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.goldDark,width: 2),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.1),

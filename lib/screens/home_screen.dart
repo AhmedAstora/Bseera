@@ -498,6 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.goldDark,width: 2),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.1),
@@ -539,12 +540,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPrayerTimeCard(String name, String time, IconData icon, bool isNext) {
     return Container(
-      width: 80,
+      width: 85,
       margin: const EdgeInsets.only(left: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isNext ? AppTheme.primaryGreen : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.goldDark,width: 1.5),
         boxShadow: [
           BoxShadow(
             color: isNext
@@ -593,6 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.goldDark,width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
