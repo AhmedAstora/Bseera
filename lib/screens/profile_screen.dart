@@ -59,19 +59,13 @@ class ProfileScreen extends StatelessWidget {
                                 : const AssetImage('assets/images/person.png') as ImageProvider,
                           );
                         }),
+                        const SizedBox(height: 12),
                         Obx(() => Text(
                           controller.name.value,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                          ),
-                        )),
-                        Obx(() => Text(
-                          controller.email.value,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 14,
                           ),
                         )),
                       ],

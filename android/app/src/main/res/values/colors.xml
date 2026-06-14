@@ -3,4 +3,5 @@
     <color name="splash_background">#1A1A2E</color>
     <color name="primary_green">#1B4332</color>
     <color name="gold">#D4A853</color>
+	<color name="ic_launcher_background">#18453B</color>
 </resources>

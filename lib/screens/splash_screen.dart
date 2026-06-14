@@ -1,6 +1,7 @@
 import 'package:bseera/Controller/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
 
-    // تهيئة الـ Controller مركزياً لضمان استقرار التطبيق ومنع الأخطاء السابقة
+    // تهيئة الـ Controller مركزياً
     Get.put(ProfileController(), permanent: true);
 
     _controller = AnimationController(
@@ -28,7 +29,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       vsync: this,
     );
 
-    // أنميشن الظهور النقي (Fade)
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -36,7 +36,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       ),
     );
 
-    // أنميشن التكبير الفاخر (Scale) مع ارتداد لطيف جداً في النهاية
     _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -44,7 +43,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       ),
     );
 
-    // أنميشن الصعود الخفيف للأعلى (Slide) لاستقرار العناصر في المنتصف
     _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _controller,
@@ -54,10 +52,20 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    // وقت الانتظار المطور والانتقال السلس لصفحة الـ Onboarding
+    // المنطق الذكي للانتقال بعد 3 ثوانٍ
     Future.delayed(const Duration(milliseconds: 3000), () {
       if (mounted) {
-        Get.offNamed('/onboarding');
+        final box = GetStorage();
+        // التحقق من هل أتم المستخدم الـ Onboarding سابقاً
+        bool hasCompletedOnboarding = box.read('hasCompletedOnboarding') ?? false;
+
+        if (hasCompletedOnboarding) {
+          // إذا كان المستخدم قديماً، انتقل للـ Home
+          Get.offAllNamed('/home');
+        } else {
+          // إذا كان مستخدماً جديداً، انتقل للـ Onboarding
+          Get.offAllNamed('/onboarding');
+        }
       }
     });
   }
@@ -71,11 +79,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1713), // خلفية ملكية داكنة (الأخضر الزيتوني العميق)
+      backgroundColor: const Color(0xFF0F1713),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. هالة ضوئية دائرية خلفية (Radial Gradient) لتفادي جمود الخلفية وإعطاء لمسة فخامة في المنتصف
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -90,8 +97,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             ),
           ),
-
-          // 2. المحتوى الرئيسي متمركز تماماً في سنتر الشاشة
           Center(
             child: SafeArea(
               child: FadeTransition(
@@ -103,18 +108,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // ليأخذ العمود حجم محتواه فقط ويتمركز بدقة
+                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // أيقونة مسجد تعبيرية مدمجة كشعار علوي فخم
                           Icon(
                             Icons.mosque_outlined,
-                            size: 64, // تكبير الحجم لتناسب التصميم المركزي
+                            size: 64,
                             color: AppTheme.gold.withOpacity(0.85),
                           ),
                           const SizedBox(height: 24),
-
-                          // 🌟 اسم التطبيق مترجم فورياً حسب لغة النظام
                           Text(
                             'app_name'.tr,
                             style: TextStyle(
@@ -133,8 +135,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                           ),
                           const SizedBox(height: 4),
-
-                          // الاسم بالإنجليزية ثابت لأن لغته إنجليزية بالفعل ولا يحتاج ترجمة
                           Text(
                             'B S E E R A',
                             style: TextStyle(
@@ -145,8 +145,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                           ),
                           const SizedBox(height: 24),
-
-                          // خط فاصل زخرفي ناعم يتلاشى من الأطراف
                           Container(
                             width: 80,
                             height: 1.5,
@@ -157,8 +155,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                           ),
                           const SizedBox(height: 24),
-
-                          // 🌟 الوصف الفرعي للتطبيق أصبح مترجماً (تأكدي من إضافة المفتاح 'app_description' في ملف الترجمة)
                           Text(
                             'app_description'.tr,
                             style: TextStyle(
@@ -176,8 +172,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             ),
           ),
-
-          // 3. الجزء السفلي: مؤشر التحميل بتصميم ناعم ومستقر في أسفل الشاشة
           Positioned(
             bottom: 50,
             left: 0,
@@ -200,7 +194,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // 🌟 نص جاري التحميل أصبح مترجماً فورياً
                     Text(
                       'loading'.tr,
                       style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/app_theme.dart';
@@ -69,7 +70,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: TextButton(
-                      onPressed: () => Get.offNamed('/login'),
+                      onPressed: () {
+                        GetStorage().write('hasCompletedOnboarding', true);
+                        Get.offAllNamed('/home');
+                      },
+
                       child: Text(
                         'skip'.tr, // 🌟 ترجمة كلمة "تخطي"
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -171,7 +176,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 curve: Curves.easeInOut,
                               );
                             } else {
-                              Get.offNamed('/login');
+                              GetStorage().write('hasCompletedOnboarding', true);
+                              Get.offAllNamed('/home');
                             }
                           },
                           style: ElevatedButton.styleFrom(

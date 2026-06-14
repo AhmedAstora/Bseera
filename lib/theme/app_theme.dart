@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors - Islamic Green & Gold
@@ -43,45 +42,25 @@ class AppTheme {
         onSurface: charcoal,
         onError: Colors.white,
       ),
-      textTheme: GoogleFonts.cairoTextTheme().copyWith(
-        displayLarge: GoogleFonts.cairo(
-          fontSize: 32, fontWeight: FontWeight.bold, color: primaryGreen,
-        ),
-        displayMedium: GoogleFonts.cairo(
-          fontSize: 24, fontWeight: FontWeight.bold, color: primaryGreen,
-        ),
-        displaySmall: GoogleFonts.cairo(
-          fontSize: 20, fontWeight: FontWeight.w600, color: charcoal,
-        ),
-        headlineLarge: GoogleFonts.cairo(
-          fontSize: 18, fontWeight: FontWeight.w600, color: primaryGreen,
-        ),
-        headlineMedium: GoogleFonts.cairo(
-          fontSize: 16, fontWeight: FontWeight.w600, color: charcoal,
-        ),
-        bodyLarge: GoogleFonts.cairo(
-          fontSize: 16, fontWeight: FontWeight.normal, color: charcoal,
-        ),
-        bodyMedium: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: FontWeight.normal, color: charcoal,
-        ),
-        bodySmall: GoogleFonts.cairo(
-          fontSize: 12, fontWeight: FontWeight.normal, color: Colors.grey,
-        ),
-        labelLarge: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: FontWeight.w600, color: primaryGreen,
-        ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontFamily: 'Cairo', fontSize: 32, fontWeight: FontWeight.bold, color: primaryGreen),
+        displayMedium: TextStyle(fontFamily: 'Cairo', fontSize: 24, fontWeight: FontWeight.bold, color: primaryGreen),
+        displaySmall: TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w600, color: charcoal),
+        headlineLarge: TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w600, color: primaryGreen),
+        headlineMedium: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600, color: charcoal),
+        bodyLarge: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.normal, color: charcoal),
+        bodyMedium: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.normal, color: charcoal),
+        bodySmall: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.normal, color: Colors.grey),
+        labelLarge: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w600, color: primaryGreen),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: true,
         backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
-        titleTextStyle: GoogleFonts.cairo(
-          fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white,
-        ),
+        titleTextStyle: TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
       ),
-      cardTheme: CardThemeData( // 👈 وتم تغييرها هنا أيضاً
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: const Color(0xFF16213E),
@@ -94,9 +73,7 @@ class AppTheme {
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.cairo(
-            fontSize: 16, fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -105,41 +82,25 @@ class AppTheme {
           side: const BorderSide(color: primaryGreen, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.cairo(
-            fontSize: 16, fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cream.withAlpha(127),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: sand.withAlpha(127)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryGreen, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: error, width: 1.5),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: sand.withAlpha(127))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: primaryGreen, width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: error, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: GoogleFonts.cairo(
-          fontSize: 14, color: Colors.grey,
-        ),
+        hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.grey),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: primaryGreen,
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.cairo(fontSize: 12),
+        selectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
@@ -149,10 +110,7 @@ class AppTheme {
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      dividerTheme: DividerThemeData(
-        color: sand.withAlpha(127),
-        thickness: 1,
-      ),
+      dividerTheme: DividerThemeData(color: sand.withAlpha(127), thickness: 1),
     );
   }
 
@@ -167,32 +125,20 @@ class AppTheme {
         secondary: goldLight,
         surface: Color(0xFF16213E),
         error: Color(0xFFE63946),
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.white,
-        onError: Colors.white,
       ),
-      textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.cairo(
-          fontSize: 32, fontWeight: FontWeight.bold, color: goldLight,
-        ),
-        displayMedium: GoogleFonts.cairo(
-          fontSize: 24, fontWeight: FontWeight.bold, color: goldLight,
-        ),
-        bodyLarge: GoogleFonts.cairo(
-          fontSize: 16, color: Colors.white,
-        ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontFamily: 'Cairo', fontSize: 32, fontWeight: FontWeight.bold, color: goldLight),
+        displayMedium: TextStyle(fontFamily: 'Cairo', fontSize: 24, fontWeight: FontWeight.bold, color: goldLight),
+        bodyLarge: TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Colors.white),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: const Color(0xFF16213E),
+        backgroundColor: Color(0xFF16213E),
         foregroundColor: Colors.white,
-        titleTextStyle: GoogleFonts.cairo(
-          fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white,
-        ),
+        titleTextStyle: TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
       ),
-      cardTheme: CardThemeData( // 👈 وتم تغييرها هنا أيضاً
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: const Color(0xFF16213E),
@@ -210,21 +156,12 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF0F3460).withAlpha(127),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withAlpha(76)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: goldLight, width: 2),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withAlpha(76))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: goldLight, width: 2)),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: const Color(0xFF16213E),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Color(0xFF16213E),
         selectedItemColor: goldLight,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
@@ -233,7 +170,7 @@ class AppTheme {
     );
   }
 
-  // Gradients
+  // Gradients (كما هي)
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primaryGreen, primaryGreenLight],
     begin: Alignment.topLeft,

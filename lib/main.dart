@@ -1,12 +1,15 @@
-import 'package:bseera/main.dart';
+import 'package:bseera/screens/about_us_screen.dart';
+import 'package:bseera/screens/contact_us_screen.dart';
+import 'package:bseera/screens/faq_screen.dart';
 import 'package:bseera/utils/translate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:get/get.dart';
 import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/prayer_times_screen.dart';
 import 'screens/quran_screen.dart';
@@ -21,28 +24,41 @@ import 'screens/profile_screen.dart';
 import 'theme/app_theme.dart';
 import 'utils/performance_optimizer.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
 
-  // تهيئة بيانات التواريخ للغة العربية لمنع انهيار شاشة مواقيت الصلاة
-  await initializeDateFormatting('ar_EG', null);
+  _initializeBackgroundServices();
 
-  // Performance optimizations
-  PerformanceOptimizer.optimize();
 
-  // Lock orientation
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const IslamicApp());
+  // هنا نحدد المسار الابتدائي دائماً بـ /splash
+  // لأن الـ splash هي التي ستقوم بفحص حالة المستخدم وتوجيهه للمكان الصحيح
+  runApp(const IslamicApp(initialRoute: '/splash'));
 }
 
+void _initializeBackgroundServices() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('@mipmap/launcher_icon');
 
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await initializeDateFormatting('ar_EG', null);
+  PerformanceOptimizer.optimize();
+}
 
 class IslamicApp extends StatelessWidget {
-  const IslamicApp({super.key});
+  final String initialRoute;
+  const IslamicApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -52,19 +68,17 @@ class IslamicApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-
-      // 🌟 2. تعديل الأسطر الخاصة باللغة والترجمة هنا:
-      translations: AppTranslations(), // ربط كلاس الترجمة الذي أنشأناه في الأعلى
-      locale: const Locale('ar', 'AE'), // تغيير اللغة الافتراضية للتطبيق لتصبح العربية أولاً
-      fallbackLocale: const Locale('ar', 'AE'), // اللغة الاحتياطية في حال حدوث خطأ هي العربية
-
-      // Performance settings
+      translations: AppTranslations(),
+      locale: const Locale('en', 'AE'),
+      fallbackLocale: const Locale('en', 'AE'),
       defaultTransition: Transition.fade,
       transitionDuration: const Duration(milliseconds: 250),
       getPages: [
         GetPage(name: '/splash', page: () => const SplashScreen()),
         GetPage(name: '/onboarding', page: () => const OnboardingScreen()),
-        GetPage(name: '/login', page: () => const LoginScreen()),
+        GetPage(name: '/faq_screen', page: () => FaqScreen()),
+        GetPage(name: '/about_us_screen', page: () => const AboutUsScreen()),
+        GetPage(name: '/contact_us_screen', page: () => const ContactUsScreen()),
         GetPage(name: '/home', page: () => const HomeScreen()),
         GetPage(name: '/prayer-times', page: () => const PrayerTimesScreen()),
         GetPage(name: '/quran', page: () => const QuranScreen()),
@@ -75,14 +89,12 @@ class IslamicApp extends StatelessWidget {
         GetPage(name: '/quran-reader', page: () => const QuranReaderScreen()),
         GetPage(name: '/azkar', page: () => const AzkarScreen()),
         GetPage(name: '/tasbeeh', page: () => const TasbeehScreen()),
-        GetPage(name: '/profile', page: () =>  ProfileScreen()),
+        GetPage(name: '/profile', page: () => ProfileScreen()),
       ],
-      initialRoute: '/splash',
+      initialRoute: initialRoute,
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0),
-          ),
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.0)),
           child: child!,
         );
       },

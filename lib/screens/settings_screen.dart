@@ -1,6 +1,14 @@
 import 'package:bseera/Controller/profile_controller.dart';
+import 'package:bseera/main.dart';
+import 'package:bseera/screens/about_us_screen.dart';
+import 'package:bseera/screens/contact_us_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -13,6 +21,55 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final box = GetStorage();
+   AndroidNotificationDetails androidPlatformChannelSpecifics =
+  AndroidNotificationDetails(
+    'your_channel_id',
+    'prayer_notifications',
+    importance: Importance.max,
+    priority: Priority.high,
+    icon: '@mipmap/launcher_icon', // هذا هو المسار الجديد الذي ولدته المكتبة
+  );
+
+  late  NotificationDetails platformChannelSpecifics =
+  NotificationDetails(android: androidPlatformChannelSpecifics);
+// دالة التحكم في الإشعارات
+  void toggleNotifications(bool value) async {
+    setState(() => _notifications = value);
+    await box.write('notifications', value);
+
+    if (value) {
+      // تفعيل الإشعارات
+      await flutterLocalNotificationsPlugin.show(
+        0,
+        'تطبيق البصيرة',
+        'تم تفعيل إشعارات الصلاة بنجاح',
+        platformChannelSpecifics,
+      );
+    } else {
+      // إيقاف الإشعارات
+      await flutterLocalNotificationsPlugin.cancelAll();
+      print("تم إيقاف الإشعارات");
+    }
+  }
+
+// دالة التحكم في الموقع
+  void toggleLocation(bool value) async {
+    setState(() => _location = value);
+    box.write('location', value);
+
+    if (value) {
+      // طلب إذن الوصول للموقع
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        Position position = await Geolocator.getCurrentPosition();
+        print("الموقع الحالي: ${position.latitude}, ${position.longitude}");
+      }
+    } else {
+      // كود إيقاف الموقع
+      print("تم إيقاف الموقع");
+    }
+  }
   final ImagePicker _picker = ImagePicker();
   File? _profileImage;
   bool _isDarkMode = false;
@@ -63,7 +120,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final bool isRtl = Get.locale?.languageCode == 'ar';
@@ -86,9 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? TextDirection.rtl
                       : TextDirection.ltr,
                   child: Row(
-                    children: [
-                      Icon(Icons.arrow_back, color: Colors.white),
-                    ],
+                    children: [Icon(Icons.arrow_back, color: Colors.white)],
                   ),
                 ),
                 onPressed: () => Get.back(),
@@ -122,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark,width: 2),
+                        border: Border.all(color: AppTheme.goldDark, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -151,66 +205,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          _buildProfileItem(
-                            icon: Icons.email_outlined,
-                            title: 'email'.tr,
-                            subtitleWidget: Obx(
-                              () => Text(
-                                controller.email.value,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.black),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
                               ),
                             ),
-                            onTap: () => _showEditDialog(
-                              'email',
-                              controller.email.value,
-                            ),
                           ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
-                            ),
-                          ),
+
                           const Divider(height: 12),
                           _buildProfileItem(
                             icon: Icons.camera_alt_outlined,
                             title: 'profile_image'.tr,
                             subtitle: 'tap_to_edit'.tr,
                             onTap: () => _showEditImageDialog(),
-                          ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          _buildProfileItem(
-                            icon: Icons.phone_outlined,
-                            title: 'phone_number'.tr,
-                            subtitle: '+970598358225',
-                            onTap: () => _showEditDialog(
-                              'phone_number',
-                              '+970598358225',
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          _buildProfileItem(
-                            icon: Icons.lock_outline,
-                            title: 'change_password'.tr,
-                            subtitle: '12345678',
-                            onTap: () => _showPasswordDialog(),
                           ),
                         ],
                       ),
@@ -226,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark,width: 2),
+                        border: Border.all(color: AppTheme.goldDark, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -260,7 +267,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
+                              ),
                             ),
                           ),
                           const Divider(height: 12),
@@ -297,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark,width: 2),
+                        border: Border.all(color: AppTheme.goldDark, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -308,21 +318,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: Column(
                         children: [
+
                           _buildSwitchItem(
                             icon: Icons.notifications_outlined,
                             title: 'prayer_notifications'.tr,
                             subtitle: 'prayer_notifications_sub'.tr,
                             value: _notifications,
-                            onChanged: (value) {
-                              setState(() {
-                                _notifications = value;
-                              });
-                            },
+                            onChanged: (value) => toggleNotifications(value), // الآن الدالة معروفة داخل الكلاس
                           ),
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
+                              ),
                             ),
                           ),
                           const Divider(height: 12),
@@ -331,11 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'location_title'.tr,
                             subtitle: 'location_sub'.tr,
                             value: _location,
-                            onChanged: (value) {
-                              setState(() {
-                                _location = value;
-                              });
-                            },
+                            onChanged: (value) => toggleLocation(value), // الآن الدالة معروفة داخل الكلاس
                           ),
                         ],
                       ),
@@ -351,7 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark,width: 2),
+                        border: Border.all(color: AppTheme.goldDark, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -366,12 +372,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.help_outline,
                             title: 'faq'.tr,
                             isRtl: isRtl,
-                            onTap: () {},
+                            onTap: () {Get.toNamed('/faq_screen');},
                           ),
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
+                              ),
                             ),
                           ),
                           const Divider(height: 12),
@@ -379,12 +388,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.contact_support_outlined,
                             title: 'contact_us'.tr,
                             isRtl: isRtl,
-                            onTap: () {},
+                            onTap: () => Get.to(() => const ContactUsScreen()),
                           ),
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
+                              ),
                             ),
                           ),
                           const Divider(height: 12),
@@ -392,12 +404,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.info_outline,
                             title: 'about_us'.tr,
                             isRtl: isRtl,
-                            onTap: () {},
+                            onTap: ()=> Get.to(() => const AboutUsScreen()),
                           ),
                           const Divider(height: 12),
                           Container(
                             decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
+                              border: Border.all(
+                                color: AppTheme.goldDark,
+                                width: 0.5,
+                              ),
                             ),
                           ),
                           const Divider(height: 12),
@@ -405,7 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.share_outlined,
                             title: 'share_app'.tr,
                             isRtl: isRtl,
-                            onTap: () {},
+                            onTap: ()  => shareApp(),
                           ),
                         ],
                       ),
@@ -421,7 +436,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark,width: 2),
+                        border: Border.all(color: AppTheme.goldDark, width: 2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.05),
@@ -435,21 +450,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildDangerItem(
                             icon: Icons.logout,
                             title: 'logout'.tr,
-                            color: AppTheme.warning,
-                            onTap: () => _showLogoutDialog(),
-                          ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppTheme.goldDark,width: 0.5),
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          _buildDangerItem(
-                            icon: Icons.delete_forever,
-                            title: 'delete_account'.tr,
                             color: AppTheme.error,
-                            onTap: () => _showDeleteAccountDialog(),
+                            onTap: () => _showLogoutDialog(),
                           ),
                         ],
                       ),
@@ -643,21 +645,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool isRtl,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: InkWell(
+        onTap: onTap,
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.black, size: 24),
               ),
-              child: Icon(icon, color: Colors.black, size: 24),
-            ),
+
             const SizedBox(width: 16),
             Expanded(
               child: Text(
@@ -672,7 +674,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : TextDirection.ltr,
               child: Row(
                 children: [
-                  Icon(Icons.arrow_forward_ios, color: Colors.black,size: 15,),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.black,
+                    size: 15,
+                  ),
                 ],
               ),
             ),
@@ -743,9 +749,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               if (keyKey == 'username') {
                 controller.updateName(textEditingController.text);
-              } else if (keyKey == 'email') {
-                controller.updateEmail(textEditingController.text);
-              }
+              } else if (keyKey == 'email') {}
               Get.back();
               Get.snackbar(
                 'success_title'.tr,
@@ -897,45 +901,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
-              Get.back();
-              Get.offAllNamed('/login');
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.warning),
-            child: Text('logout'.tr),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'delete_account'.tr,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineLarge?.copyWith(color: AppTheme.error),
-        ),
-        content: Text(
-          'delete_account_confirm_msg'.tr,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              Get.offAllNamed('/login');
+              // إغلاق التطبيق نهائياً
+              SystemNavigator.pop();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
-            child: Text('delete_account'.tr),
+            child: Text('exit_app'.tr), // تأكد من إضافة النص للترجمة
           ),
         ],
       ),
     );
   }
+}
+
+void shareApp() {
+  final String appLink = "https://play.google.com/store/apps/details?id=com.example.bseera"; // ضع رابط تطبيقك هنا
+
+  Share.share(
+    'حمل تطبيق البصيرة للمسبحة الإلكترونية والأذكار واستمتع بتجربة إيمانية مميزة: \n\n$appLink',
+    subject: 'تطبيق البصيرة',
+  );
 }
