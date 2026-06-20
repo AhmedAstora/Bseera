@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:bseera/screens/azkar_screen.dart';
+import 'package:bseera/screens/qibla_compass_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hijri/hijri_calendar.dart';
@@ -9,7 +11,7 @@ import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import 'quran_screen.dart';
 import 'prayer_times_screen.dart';
-import 'profile_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -108,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const PrayerTimesScreen();
       case 3:
-        return ProfileScreen();
+        return QiblaCompassScreen();
       default:
         return _buildHomeContent();
     }
@@ -124,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
       {'icon': Icons.home, 'label': 'home'.tr},
       {'icon': Icons.menu_book, 'label': 'quran'.tr},
       {'icon': Icons.self_improvement, 'label': 'prayer'.tr},
-      {'icon': Icons.person, 'label': 'profile'.tr},
+      {'icon': Icons.format_list_bulleted, 'label': 'Qibla'.tr},
     ];
 
     return Scaffold(
@@ -333,200 +335,197 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Content
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quick Actions Grid
-                GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1.3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quick Actions Grid
+              GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.3,
+                    children: [
+                      _buildQuickAction(
+                        icon: Icons.menu_book,
+                        title: 'quran_kareem'.tr,
+                        // 🌟 مترجم سابقاً
+                        subtitle: 'read_and_listen'.tr,
+                        // 🌟 ترجمة اقرأ واستمع
+                        color: AppTheme.primaryGreen,
+                        onTap: () {
+                          setState(() {
+                            _selectedIndex = 1;
+                          });
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.access_time_filled,
+                        title: 'prayer_times'.tr,
+                        // 🌟 مترجم سابقاً
+                        subtitle: 'next_prayer'.tr,
+                        // 🌟 ترجمة الصلاة القادمة
+                        color: AppTheme.teal,
+                        onTap: () {
+                          setState(() {
+                            _selectedIndex = 2;
+                          });
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.format_list_bulleted,
+                        title: 'azkar_title'.tr,
+                        // 🌟 ترجمة الأذكار
+                        subtitle: 'today_azkar'.tr,
+                        // 🌟 ترجمة أذكار اليوم
+                        color: AppTheme.gold,
+                        onTap: () => Get.toNamed('/azkar'),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.fingerprint,
+                        title: 'tasbeeh_title'.tr,
+                        // 🌟 ترجمة التسبيح
+                        subtitle: 'electronic_rosary'.tr,
+                        // 🌟 ترجمة المسبحة الإلكترونية
+                        color: AppTheme.navy,
+                        onTap: () => Get.toNamed('/tasbeeh'),
+                      ),
+                    ],
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms, delay: 200.ms)
+                  .slideY(begin: 0.2, end: 0),
+
+              const SizedBox(height: 24),
+
+              // Daily Hadith
+              _buildSectionTitle('hadith_today'.tr),
+              // 🌟 ترجمة عنوان حديث اليوم
+              const SizedBox(height: 12),
+              Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.primaryGreen, AppTheme.gold],
+                        stops: [0.0, 1.0],
+                        begin: Alignment.bottomRight,
+                        end: Alignment.topLeft,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.primaryGreen.withOpacity(0.4),
+                      ),
+                    ),
+                    child: Column(
                       children: [
-                        _buildQuickAction(
-                          icon: Icons.menu_book,
-                          title: 'quran_kareem'.tr,
-                          // 🌟 مترجم سابقاً
-                          subtitle: 'read_and_listen'.tr,
-                          // 🌟 ترجمة اقرأ واستمع
-                          color: AppTheme.primaryGreen,
-                          onTap: () {
-                            setState(() {
-                              _selectedIndex = 1;
-                            });
-                          },
+                        Text(
+                          'hadith_content'.tr, // 🌟 ترجمة متن الحديث النبوي
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                height: 1.8,
+                                color: AppTheme.charcoal,
+                              ),
                         ),
-                        _buildQuickAction(
-                          icon: Icons.access_time_filled,
-                          title: 'prayer_times'.tr,
-                          // 🌟 مترجم سابقاً
-                          subtitle: 'next_prayer'.tr,
-                          // 🌟 ترجمة الصلاة القادمة
-                          color: AppTheme.teal,
-                          onTap: () {
-                            setState(() {
-                              _selectedIndex = 2;
-                            });
-                          },
-                        ),
-                        _buildQuickAction(
-                          icon: Icons.format_list_bulleted,
-                          title: 'azkar_title'.tr,
-                          // 🌟 ترجمة الأذكار
-                          subtitle: 'today_azkar'.tr,
-                          // 🌟 ترجمة أذكار اليوم
-                          color: AppTheme.gold,
-                          onTap: () => Get.toNamed('/azkar'),
-                        ),
-                        _buildQuickAction(
-                          icon: Icons.fingerprint,
-                          title: 'tasbeeh_title'.tr,
-                          // 🌟 ترجمة التسبيح
-                          subtitle: 'electronic_rosary'.tr,
-                          // 🌟 ترجمة المسبحة الإلكترونية
-                          color: AppTheme.navy,
-                          onTap: () => Get.toNamed('/tasbeeh'),
+                        const SizedBox(height: 12),
+                        Text(
+                          'hadith_narrator'.tr, // 🌟 ترجمة الراوي (رواه مسلم)
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
-                    )
-                    .animate()
-                    .fadeIn(duration: 600.ms, delay: 200.ms)
-                    .slideY(begin: 0.2, end: 0),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms, delay: 400.ms)
+                  .slideY(begin: 0.2, end: 0),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // Daily Hadith
-                _buildSectionTitle('hadith_today'.tr),
-                // 🌟 ترجمة عنوان حديث اليوم
-                const SizedBox(height: 12),
-                Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.primaryGreen, AppTheme.gold],
-                          stops: [0.0, 1.0],
-                          begin: Alignment.bottomRight,
-                          end: Alignment.topLeft,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppTheme.primaryGreen.withOpacity(0.4),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'hadith_content'.tr, // 🌟 ترجمة متن الحديث النبوي
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  height: 1.8,
-                                  color: AppTheme.charcoal,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'hadith_narrator'.tr, // 🌟 ترجمة الراوي (رواه مسلم)
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 600.ms, delay: 400.ms)
-                    .slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 24),
-
-                // Prayer Times Summary (تعمل ديناميكياً الآن بألوانك الأصلية الفاتحة)
-                _buildSectionTitle('today_prayer_times'.tr),
-                // 🌟 ترجمة مواقيت الصلاة اليوم
-                const SizedBox(height: 12),
-                SizedBox(
-                      height: 100,
-                      child: _isLoadingPrayers
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.primaryGreen,
-                              ),
-                            )
-                          : ListView(
-                              scrollDirection: Axis.horizontal,
-                              reverse: isRtl,
-                              // 🌟 مرونة بدء التمرير الأفقي: يبدأ من اليمين في العربية ومن اليسار في الإنجليزية
-                              children: [
-                                _buildPrayerTimeCard(
-                                  'fajr'.tr,
-                                  _fajrTime,
-                                  Icons.wb_twilight,
-                                  _currentPrayerName == 'fajr',
-                                ),
-                                // 🌟 ترجمة الصلوات الخمس
-                                _buildPrayerTimeCard(
-                                  'dhuhr'.tr,
-                                  _dhuhrTime,
-                                  Icons.wb_sunny,
-                                  _currentPrayerName == 'dhuhr',
-                                ),
-                                _buildPrayerTimeCard(
-                                  'asr'.tr,
-                                  _asrTime,
-                                  Icons.wb_cloudy,
-                                  _currentPrayerName == 'asr',
-                                ),
-                                _buildPrayerTimeCard(
-                                  'maghrib'.tr,
-                                  _maghribTime,
-                                  Icons.nights_stay,
-                                  _currentPrayerName == 'maghrib',
-                                ),
-                                _buildPrayerTimeCard(
-                                  'isha'.tr,
-                                  _ishaTime,
-                                  Icons.bedtime,
-                                  _currentPrayerName == 'isha',
-                                ),
-                              ],
+              // Prayer Times Summary (تعمل ديناميكياً الآن بألوانك الأصلية الفاتحة)
+              _buildSectionTitle('today_prayer_times'.tr),
+              // 🌟 ترجمة مواقيت الصلاة اليوم
+              const SizedBox(height: 12),
+              SizedBox(
+                    height: 100,
+                    child: _isLoadingPrayers
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppTheme.primaryGreen,
                             ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 600.ms, delay: 600.ms)
-                    .slideX(begin: -0.2, end: 0),
+                          )
+                        : ListView(
+                            scrollDirection: Axis.horizontal,
+                            reverse: isRtl,
+                            // 🌟 مرونة بدء التمرير الأفقي: يبدأ من اليمين في العربية ومن اليسار في الإنجليزية
+                            children: [
+                              _buildPrayerTimeCard(
+                                'fajr'.tr,
+                                _fajrTime,
+                                Icons.wb_twilight,
+                                _currentPrayerName == 'fajr',
+                              ),
+                              // 🌟 ترجمة الصلوات الخمس
+                              _buildPrayerTimeCard(
+                                'dhuhr'.tr,
+                                _dhuhrTime,
+                                Icons.wb_sunny,
+                                _currentPrayerName == 'dhuhr',
+                              ),
+                              _buildPrayerTimeCard(
+                                'asr'.tr,
+                                _asrTime,
+                                Icons.wb_cloudy,
+                                _currentPrayerName == 'asr',
+                              ),
+                              _buildPrayerTimeCard(
+                                'maghrib'.tr,
+                                _maghribTime,
+                                Icons.nights_stay,
+                                _currentPrayerName == 'maghrib',
+                              ),
+                              _buildPrayerTimeCard(
+                                'isha'.tr,
+                                _ishaTime,
+                                Icons.bedtime,
+                                _currentPrayerName == 'isha',
+                              ),
+                            ],
+                          ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms, delay: 600.ms)
+                  .slideX(begin: -0.2, end: 0),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // Books Section
-                _buildSectionTitle('islamic_books'.tr),
-                // 🌟 ترجمة كتب إسلامية
-                const SizedBox(height: 12),
-                SizedBox(
-                      height: 200,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        reverse: isRtl,
-                        // 🌟 مرونة الترتيب من اليمين لليسار حسب لغة الواجهة الحالية
-                        children: [
-                          _buildBookCard('assets/images/book3.png'),
-                          _buildBookCard('assets/images/book1.png'),
-                          _buildBookCard('assets/images/book2.png'),
-                        ],
-                      ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 600.ms, delay: 800.ms)
-                    .slideX(begin: -0.2, end: 0),
+              // Books Section
+              _buildSectionTitle('islamic_books'.tr),
+              // 🌟 ترجمة كتب إسلامية
+              const SizedBox(height: 12),
+              SizedBox(
+                    height: 200,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: isRtl,
+                      // 🌟 مرونة الترتيب من اليمين لليسار حسب لغة الواجهة الحالية
+                      children: [
+                        _buildBookCard('assets/images/book3.png'),
+                        _buildBookCard('assets/images/book1.png'),
+                        _buildBookCard('assets/images/book2.png'),
+                      ],
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 600.ms, delay: 800.ms)
+                  .slideX(begin: -0.2, end: 0),
 
-                const SizedBox(height: 24),
-              ],
-            ),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ],

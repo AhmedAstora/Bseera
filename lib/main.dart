@@ -20,39 +20,38 @@ import 'screens/book_detail_screen.dart';
 import 'screens/quran_reader_screen.dart';
 import 'screens/azkar_screen.dart';
 import 'screens/tasbeeh_screen.dart';
-import 'screens/profile_screen.dart';
 import 'theme/app_theme.dart';
 import 'utils/performance_optimizer.dart';
 
+// تعريف الـ Plugin بشكل عام
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
 
-  _initializeBackgroundServices();
-
+  // تهيئة الإشعارات واللغات
+  await _initializeBackgroundServices();
+  await initializeDateFormatting('ar', null);
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // هنا نحدد المسار الابتدائي دائماً بـ /splash
-  // لأن الـ splash هي التي ستقوم بفحص حالة المستخدم وتوجيهه للمكان الصحيح
   runApp(const IslamicApp(initialRoute: '/splash'));
 }
 
-void _initializeBackgroundServices() async {
+Future<void> _initializeBackgroundServices() async {
+  // تحديث المسار إلى ic_notification الموجود في mipmap
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/launcher_icon');
+  AndroidInitializationSettings('@mipmap/ic_notification');
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
   );
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  await initializeDateFormatting('ar_EG', null);
   PerformanceOptimizer.optimize();
 }
 
@@ -62,6 +61,8 @@ class IslamicApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final box = GetStorage();
+
     return GetMaterialApp(
       title: 'Bseera',
       debugShowCheckedModeBanner: false,
@@ -69,8 +70,13 @@ class IslamicApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       translations: AppTranslations(),
-      locale: const Locale('en', 'AE'),
-      fallbackLocale: const Locale('en', 'AE'),
+
+      // هنا جعلنا اللغة تعتمد على جهاز المستخدم، أو الخيار المحفوظ في GetStorage
+      locale: box.read('user_lang') != null
+          ? Locale(box.read('user_lang'))
+          : Get.deviceLocale,
+      fallbackLocale: const Locale('ar', 'AE'),
+
       defaultTransition: Transition.fade,
       transitionDuration: const Duration(milliseconds: 250),
       getPages: [
@@ -89,7 +95,6 @@ class IslamicApp extends StatelessWidget {
         GetPage(name: '/quran-reader', page: () => const QuranReaderScreen()),
         GetPage(name: '/azkar', page: () => const AzkarScreen()),
         GetPage(name: '/tasbeeh', page: () => const TasbeehScreen()),
-        GetPage(name: '/profile', page: () => ProfileScreen()),
       ],
       initialRoute: initialRoute,
       builder: (context, child) {

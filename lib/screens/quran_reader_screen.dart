@@ -14,7 +14,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   late PageController _pageController;
   int _currentPage = 1;
   final box = GetStorage();
-  final Color goldColor = const Color(0xFFE8C87A);
+  final Color goldLightColor = const Color(0xFFE8C87A);
+  final Color goldDarkColor = const Color(0xFFB8943F);
   late final ValueNotifier<bool> _showSystemUI = ValueNotifier<bool>(true);
 
   @override
@@ -67,7 +68,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                   box.write('last_page', _currentPage);
                 },
                 itemBuilder: (context, index) => Container( // تأكد أن الخلفية معرفة هنا
-                  color: Get.isDarkMode ? Colors.black : const Color(0xFFF9F4E8),
+
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
                   child: SingleChildScrollView(child: _buildPageContent(index + 1)),
                 ),
@@ -77,19 +78,15 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 builder: (context, show, child) {
                   return show ? child! : const SizedBox();
                 },
-                child: Stack(
+                child: Stack( // هذا هو الـ Stack الوحيد المسؤول عن التموضع
                   children: [
                     Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: _buildHeader(),
+                      top: 0, left: 0, right: 0,
+                      child: _buildHeader(), // تأكد أن هذه الدالة لا تحتوي على Positioned بالداخل
                     ),
                     Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: _buildBottomBar(),
+                      bottom: 0, left: 0, right: 0,
+                      child: _buildBottomBar(), // تأكد أن هذه الدالة لا تحتوي على Positioned بالداخل
                     ),
                   ],
                 ),
@@ -113,11 +110,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       right: 0,
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 35, 20, 10),
-        decoration: BoxDecoration(
-          color: (Get.isDarkMode ? Colors.black : Colors.white).withOpacity(
-            0.1,
-          ),
-        ),
+
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -125,7 +118,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         icon: Icon(
         // اختيار الأيقونة المناسبة للغة
         isAr ?Icons.arrow_forward  :Icons.arrow_back ,
-            color: goldColor
+            color:Get.isDarkMode? goldLightColor:goldDarkColor,
         ),
         onPressed: () => Get.back(),
       ),
@@ -133,19 +126,19 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
            children: [
              Text(
                "الجزء : ${((_currentPage - 1) ~/ 20) + 1}",
-               style: TextStyle(color: goldColor, fontSize: 18,fontWeight: FontWeight.bold),
+               style: TextStyle(color: Get.isDarkMode? goldLightColor:goldDarkColor, fontSize: 18,fontWeight: FontWeight.bold),
              ),
              Text(
                "الصفحة : $_currentPage",
                style: TextStyle(
-                 color: goldColor,
+                 color: Get.isDarkMode? goldLightColor:goldDarkColor,
                  fontSize: 18,
                  fontWeight: FontWeight.bold,
                ),
              ),
            ],
          ),
-            Text(surahName, style: TextStyle(color: goldColor, fontSize: 20,fontWeight: FontWeight.bold)),
+            Text(surahName, style: TextStyle(color: Get.isDarkMode? goldLightColor:goldDarkColor, fontSize: 20,fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -159,10 +152,8 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       right: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: (Get.isDarkMode ? Colors.black : Colors.white).withOpacity(
-            0.6,
-          ),
-          border: Border(top: BorderSide(color: goldColor.withOpacity(0.9))),
+
+          border: Border(top: BorderSide(color:Get.isDarkMode? goldLightColor:goldDarkColor.withOpacity(0.9))),
         ),
         child: Column(
           children: [
@@ -178,25 +169,13 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     "الصفحات",
                     () {},
                   ),
-                  // 1. احذف الـ Obx تماماً من أمام الدالة
-                  _buildBtn(
-                    Get.isDarkMode ? Icons.wb_sunny_outlined : Icons.nightlight_round,
-                    Get.isDarkMode ? "نهار" : "ليل",
-                        () {
-                      // 2. تغيير الثيم
-                      Get.changeThemeMode(Get.isDarkMode ? ThemeMode.light : ThemeMode.dark);
-
-                      // 3. إجبار الشاشة على إعادة البناء لتظهر الأيقونة الجديدة فوراً
-                      setState(() {});
-                    },
-                  ),
                   _buildBtn(Icons.search, "بحث", () {}),
                 ],
               ),
             ),
-            Divider(height: 1, color: goldColor.withOpacity(0.2)),
+            Divider(height: 1, color: Get.isDarkMode? goldLightColor:goldDarkColor.withOpacity(0.2)),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -209,7 +188,6 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     int saved = box.read('bookmark') ?? 1;
                     _pageController.jumpToPage(saved - 1);
                   }),
-                  _buildBtn(Icons.people_outline, "أعمالنا", () {}),
                   _buildBtn(Icons.share_outlined, "مشاركة", () {}),
                   _buildBtn(Icons.more_horiz, "المزيد", () {}),
                 ],
@@ -226,12 +204,12 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: goldColor, size: 22),
+          Icon(icon, color:Get.isDarkMode? goldLightColor:goldDarkColor, size: 22),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: goldColor,
+              color: Get.isDarkMode? goldLightColor:goldDarkColor,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
@@ -262,7 +240,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     fontSize: 23,
                     height: 2,
                     fontFamily: 'Amiri',
-                    color: Get.isDarkMode ? Colors.white70 : Colors.black,
+
                   ),
                 ),
               ],
@@ -284,7 +262,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       margin: const EdgeInsets.symmetric(vertical: 30),
       child: Text(
         "سُورَةُ ${quran.getSurahNameArabic(surah)}",
-        style: TextStyle(color: goldColor, fontSize: 28, fontFamily: 'Amiri'),
+        style: TextStyle(color: Get.isDarkMode? goldLightColor:goldDarkColor, fontSize: 28, fontFamily: 'Amiri'),
       ),
     );
   }

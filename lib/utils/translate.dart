@@ -150,10 +150,12 @@ class AppTranslations extends Translations {
           'allahumma_salli': 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ',
           'contact_us_desc': 'نحن هنا لخدمتك! لا تتردد في مراسلتنا إذا كان لديك أي استفسار أو اقتراح.',
           'whatsapp': 'واتساب',
+          'Qibla':'القبلة',
           'exit_app': 'خروج',
         },
         'en': {
           'contact_us': 'Contact Us',
+          'Qibla': 'Qibla',
           'contact_us_desc': 'We are here to serve you! Feel free to contact us if you have any questions or suggestions.',
           'email': 'Email',
           'whatsapp': 'WhatsApp',

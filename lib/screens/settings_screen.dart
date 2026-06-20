@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bseera/Controller/profile_controller.dart';
 import 'package:bseera/main.dart';
 import 'package:bseera/screens/about_us_screen.dart';
@@ -22,16 +24,19 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final box = GetStorage();
-   AndroidNotificationDetails androidPlatformChannelSpecifics =
-  AndroidNotificationDetails(
-    'your_channel_id',
+  StreamSubscription<Position>? positionStream;
+  final AndroidNotificationDetails androidPlatformChannelSpecifics =
+  const AndroidNotificationDetails(
+    'prayer_channel_id',
     'prayer_notifications',
     importance: Importance.max,
     priority: Priority.high,
-    icon: '@mipmap/launcher_icon', // هذا هو المسار الجديد الذي ولدته المكتبة
+    icon: '@mipmap/ic_notification',
+    color: AppTheme.primaryGreen,
+    colorized: true,
   );
 
-  late  NotificationDetails platformChannelSpecifics =
+  late final NotificationDetails platformChannelSpecifics =
   NotificationDetails(android: androidPlatformChannelSpecifics);
 // دالة التحكم في الإشعارات
   void toggleNotifications(bool value) async {
@@ -39,35 +44,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await box.write('notifications', value);
 
     if (value) {
-      // تفعيل الإشعارات
       await flutterLocalNotificationsPlugin.show(
         0,
         'تطبيق البصيرة',
-        'تم تفعيل إشعارات الصلاة بنجاح',
+        'تم تفعيل إشعارات الصلاة',
         platformChannelSpecifics,
       );
     } else {
-      // إيقاف الإشعارات
       await flutterLocalNotificationsPlugin.cancelAll();
-      print("تم إيقاف الإشعارات");
+      debugPrint("تم إيقاف الإشعارات");
     }
   }
 
 // دالة التحكم في الموقع
   void toggleLocation(bool value) async {
     setState(() => _location = value);
-    box.write('location', value);
+    await box.write('location', value);
 
     if (value) {
-      // طلب إذن الوصول للموقع
-      LocationPermission permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-        Position position = await Geolocator.getCurrentPosition();
-        print("الموقع الحالي: ${position.latitude}, ${position.longitude}");
-      }
+      positionStream = Geolocator.getPositionStream().listen((Position position) {
+        debugPrint("الموقع: ${position.latitude}, ${position.longitude}");
+      });
     } else {
-      // كود إيقاف الموقع
-      print("تم إيقاف الموقع");
+      await positionStream?.cancel();
+      positionStream = null;
+      debugPrint("تم إيقاف الموقع");
     }
   }
   final ImagePicker _picker = ImagePicker();
@@ -87,6 +88,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       _selectedLanguage = 'العربية';
     }
+    _notifications = box.read('notifications') ?? true;
+    _location = box.read('location') ?? true;
+    _selectedLanguage = Get.locale?.languageCode == 'en' ? 'English' : 'العربية';
   }
 
   Future<void> _pickImage(ImageSource source) async {
