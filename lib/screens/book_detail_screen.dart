@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 
 class BookDetailScreen extends StatelessWidget {
@@ -34,7 +35,9 @@ class BookDetailScreen extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () {},
+                onPressed: () => Share.share(
+                  '${book['title']} - ${book['author']}',
+                ),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(

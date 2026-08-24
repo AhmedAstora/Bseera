@@ -16,9 +16,11 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
   double _qiblaAngle = 0.0;
   bool _isLoading = true;
 
-  // ===== ألوان الهوية البصرية =====
+  // ===== ألوان الهوية البصرية (ذهبي ثابت + خلفية تتبدل حسب الوضع) =====
   static const Color _bgDark = Color(0xFF0B1320);
   static const Color _dialDark = Color(0xFF111B2E);
+  static const Color _bgLight = Color(0xFFFAF6EE);
+  static const Color _dialLight = Color(0xFFFFFFFF);
   static const Color _gold = Color(0xFFE8B339);
   static const Color _goldLight = Color(0xFFF6D27A);
   static const Color _goldDeep = Color(0xFFB9842A);
@@ -40,7 +42,7 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     // 3. جلب الموقع الحقيقي في الخلفية
     Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low)
         .then((pos) => _updateQiblaAngle(pos.latitude, pos.longitude))
-        .catchError((e) => print("GPS غير متاح: $e"));
+        .catchError((e) => debugPrint("GPS غير متاح: $e"));
 
     // 4. تشغيل البوصلة
     FlutterCompass.events?.listen((event) {
@@ -69,9 +71,18 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color bg = isDark ? _bgDark : _bgLight;
+    final Color dial = isDark ? _dialDark : _dialLight;
+    final Color titleColor = isDark ? Colors.white : const Color(0xFF2C2C2C);
+    final Color subtitleColor = isDark ? Colors.white38 : Colors.black38;
+    final Color mutedText = isDark ? Colors.white60 : Colors.black54;
+    final Color chipBg = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04);
+    final Color chipBorder = isDark ? Colors.white24 : Colors.black12;
+
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: _bgDark,
+        backgroundColor: bg,
         body: const Center(
           child: CircularProgressIndicator(color: _gold, strokeWidth: 3),
         ),
@@ -82,26 +93,26 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     final bool isAligned = _angleDiff(_direction, _qiblaAngle) < 5;
 
     return Scaffold(
-      backgroundColor: _bgDark,
+      backgroundColor: bg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(),
+            _buildAppBar(titleColor, subtitleColor),
             const SizedBox(height: 8),
             Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildStatusChip(isAligned),
+                    _buildStatusChip(isAligned, chipBg, chipBorder, mutedText),
                     const SizedBox(height: 28),
-                    _buildCompassDial(rotation),
+                    _buildCompassDial(rotation, dial, bg),
                     const SizedBox(height: 36),
                     Text(
                       isAligned ? "أنت متجه الآن نحو القبلة" : "أدر الهاتف حتى يشير السهم للأعلى",
                       style: TextStyle(
                         fontSize: 15,
-                        color: isAligned ? _goldLight : Colors.white60,
+                        color: isAligned ? (isDark ? _goldLight : _goldDeep) : mutedText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -120,7 +131,7 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     return diff > 180 ? 360 - diff : diff;
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(Color titleColor, Color subtitleColor) {
     return Padding(
       padding: const EdgeInsets.symmetric( vertical: 12),
       child: Row(
@@ -128,20 +139,20 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
         children: [
 
           Column(
-            children: const [
+            children: [
               Text(
                 "بوصلة القبلة",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: titleColor,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 "Qibla Finder",
-                style: TextStyle(color: Colors.white38, fontSize: 11, letterSpacing: 1.5),
+                style: TextStyle(color: subtitleColor, fontSize: 11, letterSpacing: 1.5),
               ),
             ],
           ),
@@ -151,22 +162,22 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     );
   }
 
-  Widget _buildStatusChip(bool isAligned) {
+  Widget _buildStatusChip(bool isAligned, Color chipBg, Color chipBorder, Color mutedText) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
-        color: isAligned ? _gold.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+        color: isAligned ? _gold.withOpacity(0.15) : chipBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isAligned ? _gold : Colors.white24,
+          color: isAligned ? _gold : chipBorder,
           width: 1,
         ),
       ),
       child: Text(
         "${_qiblaAngle.toStringAsFixed(0)}° عن الشمال",
         style: TextStyle(
-          color: isAligned ? _goldLight : Colors.white70,
+          color: isAligned ? _goldDeep : mutedText,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -174,8 +185,9 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     );
   }
 
-  Widget _buildCompassDial(double rotation) {
+  Widget _buildCompassDial(double rotation, Color dial, Color bg) {
     const double size = 300;
+    final bool isDark = dial == _dialDark;
     return Container(
       width: size,
       height: size,
@@ -188,15 +200,15 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
         ),
         boxShadow: [
           BoxShadow(color: _gold.withOpacity(0.35), blurRadius: 30, spreadRadius: 2),
-          const BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, 10)),
+          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.54 : 0.18), blurRadius: 20, offset: const Offset(0, 10)),
         ],
       ),
       padding: const EdgeInsets.all(10),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(
-            colors: [_dialDark, _bgDark],
+            colors: [dial, bg],
             radius: 0.9,
           ),
         ),
@@ -206,7 +218,7 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
             // درجات وعلامات البوصلة
             CustomPaint(
               size: const Size(size - 20, size - 20),
-              painter: _CompassDialPainter(),
+              painter: _CompassDialPainter(isDark: isDark),
             ),
             // مؤشر القبلة الدوار
             Transform.rotate(
@@ -223,7 +235,7 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(colors: [_goldLight, _goldDeep]),
-                border: Border.all(color: _bgDark, width: 2),
+                border: Border.all(color: bg, width: 2),
                 boxShadow: [BoxShadow(color: _gold.withOpacity(0.6), blurRadius: 8)],
               ),
             ),
@@ -238,13 +250,19 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
 class _CompassDialPainter extends CustomPainter {
   static const Color gold = Color(0xFFE8B339);
 
+  final bool isDark;
+  const _CompassDialPainter({required this.isDark});
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
+    final Color tickColor = isDark ? Colors.white : Colors.black;
+    final Color cardinalColor = isDark ? Colors.white70 : Colors.black54;
+    final Color numberColor = isDark ? Colors.white54 : Colors.black45;
 
     final tickPaint = Paint()
-      ..color = Colors.white.withOpacity(0.35)
+      ..color = tickColor.withOpacity(0.35)
       ..strokeWidth = 1.2;
     final majorTickPaint = Paint()
       ..color = gold.withOpacity(0.9)
@@ -272,14 +290,14 @@ class _CompassDialPainter extends CustomPainter {
         center.dx + radius * 0.7 * math.sin(rad),
         center.dy - radius * 0.7 * math.cos(rad),
       );
-      _drawText(canvas, "$deg", pos, Colors.white54, 10);
+      _drawText(canvas, "$deg", pos, numberColor, 10);
     }
 
     // الاتجاهات الأساسية N E S W
     _drawCardinal(canvas, center, radius, 0, "N", gold, 16);
-    _drawCardinal(canvas, center, radius, 90, "E", Colors.white70, 14);
-    _drawCardinal(canvas, center, radius, 180, "S", Colors.white70, 14);
-    _drawCardinal(canvas, center, radius, 270, "W", Colors.white70, 14);
+    _drawCardinal(canvas, center, radius, 90, "E", cardinalColor, 14);
+    _drawCardinal(canvas, center, radius, 180, "S", cardinalColor, 14);
+    _drawCardinal(canvas, center, radius, 270, "W", cardinalColor, 14);
   }
 
   void _drawCardinal(Canvas canvas, Offset center, double radius, int deg, String label, Color color, double fontSize) {
@@ -307,7 +325,7 @@ class _CompassDialPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CompassDialPainter oldDelegate) => oldDelegate.isDark != isDark;
 }
 
 // ===== رسم مؤشر القبلة (إبرة ذهبية مع رمز الكعبة) =====

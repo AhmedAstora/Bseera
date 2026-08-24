@@ -24,7 +24,11 @@ class AboutUsScreen extends StatelessWidget {
             // عنوان واسم التطبيق
             Text(
               'tasbeeh_app'.tr,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryGreen,
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -32,14 +36,30 @@ class AboutUsScreen extends StatelessWidget {
             Text(
               'تطبيق البصيرة هو رفيقك الرقمي للتسبيح والأذكار، مصمم بعناية ليكون سهل الاستخدام ويدعمك في رحلتك الإيمانية اليومية بكل هدوء وتركيز.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey[400], height: 1.5),
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[400],
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 32),
 
             // بطاقة المميزات
-            _buildFeatureCard(Icons.favorite_outline, 'سهولة الاستخدام', 'واجهة بسيطة ومريحة للعين.'),
-            _buildFeatureCard(Icons.update, 'تحديثات مستمرة', 'نضيف الأذكار والأدعية بشكل دوري.'),
-            _buildFeatureCard(Icons.offline_bolt_outlined, 'بدون إنترنت', 'يعمل التطبيق في أي وقت وفي أي مكان.'),
+            _buildFeatureCard(
+              Icons.favorite_outline,
+              'سهولة الاستخدام',
+              'واجهة بسيطة ومريحة للعين.',
+            ),
+            _buildFeatureCard(
+              Icons.update,
+              'تحديثات مستمرة',
+              'نضيف الأذكار والأدعية بشكل دوري.',
+            ),
+            _buildFeatureCard(
+              Icons.offline_bolt_outlined,
+              'بدون إنترنت',
+              'يعمل التطبيق في أي وقت وفي أي مكان.',
+            ),
 
             const SizedBox(height: 32),
             Text('الإصدار 1.0.0', style: TextStyle(color: Colors.grey[400])),
@@ -57,7 +77,9 @@ class AboutUsScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: AppTheme.gold.withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
       child: Row(
         children: [
@@ -66,8 +88,18 @@ class AboutUsScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.primaryGreen)),
-              Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.primaryGreen,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
             ],
           ),
         ],

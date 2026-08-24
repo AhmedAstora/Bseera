@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:bseera/Controller/profile_controller.dart';
-import 'package:bseera/main.dart';
 import 'package:bseera/screens/about_us_screen.dart';
 import 'package:bseera/screens/contact_us_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import '../services/azan_service.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
@@ -23,74 +21,52 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final AzanService _azan = AzanService.instance;
   final box = GetStorage();
-  StreamSubscription<Position>? positionStream;
-  final AndroidNotificationDetails androidPlatformChannelSpecifics =
-  const AndroidNotificationDetails(
-    'prayer_channel_id',
-    'prayer_notifications',
-    importance: Importance.max,
-    priority: Priority.high,
-    icon: '@mipmap/ic_notification',
-    color: AppTheme.primaryGreen,
-    colorized: true,
-  );
 
-  late final NotificationDetails platformChannelSpecifics =
-  NotificationDetails(android: androidPlatformChannelSpecifics);
-// دالة التحكم في الإشعارات
+  // 🌟 دالة التحكم في إشعارات الصلاة: الآن بتربط فعلياً بجدولة الأذان
+  // الحقيقية بدل ما تعرض إشعار تجريبي وبس. القيمة بتتخزن بشكل دائم
+  // عبر AzanService (GetStorage) فما بتنمسح مع الرستارت.
   void toggleNotifications(bool value) async {
     setState(() => _notifications = value);
-    await box.write('notifications', value);
+    await _azan.setNotificationsEnabled(value);
 
-    if (value) {
-      await flutterLocalNotificationsPlugin.show(
-        0,
-        'تطبيق البصيرة',
-        'تم تفعيل إشعارات الصلاة',
-        platformChannelSpecifics,
-      );
-    } else {
-      await flutterLocalNotificationsPlugin.cancelAll();
-      debugPrint("تم إيقاف الإشعارات");
-    }
+    Get.snackbar(
+      value ? 'success_title'.tr : 'info_title'.tr,
+      value ? 'notifications_enabled_msg'.tr : 'notifications_disabled_msg'.tr,
+      backgroundColor: value ? Colors.green : Colors.grey,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
-// دالة التحكم في الموقع
+  // 🌟 دالة التحكم في الموقع: تحدث الموقع فعلياً وتعيد حساب أوقات الصلاة
+  // وجدولة الإشعارات إذا كان الموقع اتغير.
   void toggleLocation(bool value) async {
     setState(() => _location = value);
-    await box.write('location', value);
+    await _azan.setLocationEnabled(value);
 
     if (value) {
-      positionStream = Geolocator.getPositionStream().listen((Position position) {
-        debugPrint("الموقع: ${position.latitude}, ${position.longitude}");
-      });
+      debugPrint(
+          "تم تفعيل الموقع - الموقع الحالي: ${_azan.latitude}, ${_azan.longitude}");
     } else {
-      await positionStream?.cancel();
-      positionStream = null;
-      debugPrint("تم إيقاف الموقع");
+      debugPrint("تم إيقاف الموقع - سيتم استخدام آخر موقع محفوظ");
     }
   }
+
   final ImagePicker _picker = ImagePicker();
   File? _profileImage;
-  bool _isDarkMode = false;
   bool isCurrentlyDark = Get.isDarkMode;
   bool _notifications = true;
   bool _location = true;
   final ProfileController controller = Get.find();
-  String _selectedLanguage = 'العربية';
 
   @override
   void initState() {
     super.initState();
-    if (Get.locale?.languageCode == 'en') {
-      _selectedLanguage = 'English';
-    } else {
-      _selectedLanguage = 'العربية';
-    }
-    _notifications = box.read('notifications') ?? true;
-    _location = box.read('location') ?? true;
-    _selectedLanguage = Get.locale?.languageCode == 'en' ? 'English' : 'العربية';
+    // 🌟 قراءة القيم مباشرة من AzanService (نفس مصدر التخزين الدائم)
+    _notifications = _azan.notificationsEnabled;
+    _location = _azan.locationEnabled;
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -126,10 +102,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final bool isRtl = Get.locale?.languageCode == 'ar';
-
     return Directionality(
-      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      textDirection: TextDirection.rtl,
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -139,16 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               pinned: true,
               automaticallyImplyLeading: false,
               leading: IconButton(
-                icon: // هذا الكود يوضع داخل الـ Row في دالة _buildActionItem
-                Directionality(
-                  // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
-                  textDirection: Get.locale?.languageCode == 'ar'
-                      ? TextDirection.rtl
-                      : TextDirection.ltr,
-                  child: Row(
-                    children: [Icon(Icons.arrow_back, color: Colors.white)],
-                  ),
-                ),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Get.back(),
               ),
               flexibleSpace: FlexibleSpaceBar(
@@ -172,62 +137,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Profile Section
-                    _buildSectionHeader('my_account'.tr),
+
+
+
+
                     const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.goldDark, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          _buildProfileItem(
-                            icon: Icons.person_outline,
-                            title: 'username'.tr,
-                            subtitleWidget: Obx(
-                              () => Text(
-                                controller.name.value,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.black),
-                              ),
-                            ),
-                            onTap: () => _showEditDialog(
-                              'username',
-                              controller.name.value,
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppTheme.goldDark,
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-
-                          const Divider(height: 12),
-                          _buildProfileItem(
-                            icon: Icons.camera_alt_outlined,
-                            title: 'profile_image'.tr,
-                            subtitle: 'tap_to_edit'.tr,
-                            onTap: () => _showEditImageDialog(),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
 
                     // Appearance Section
                     _buildSectionHeader('appearance'.tr),
@@ -266,35 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               } else {
                                 Get.changeThemeMode(ThemeMode.light);
                               }
-                            },
-                          ),
-                          const Divider(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppTheme.goldDark,
-                                width: 0.5,
-                              ),
-                            ),
-                          ),
-                          const Divider(height: 12),
-                          _buildDropdownItem(
-                            icon: Icons.language,
-                            title: 'language'.tr,
-                            value: _selectedLanguage,
-                            items: const ['العربية', 'English'],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() {
-                                  _selectedLanguage = value;
-                                });
-
-                                if (value == 'العربية') {
-                                  Get.updateLocale(const Locale('ar', 'AE'));
-                                } else if (value == 'English') {
-                                  Get.updateLocale(const Locale('en', 'US'));
-                                }
-                              }
+                              box.write('dark_mode_enabled', value);
                             },
                           ),
                         ],
@@ -375,7 +261,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildActionItem(
                             icon: Icons.help_outline,
                             title: 'faq'.tr,
-                            isRtl: isRtl,
                             onTap: () {Get.toNamed('/faq_screen');},
                           ),
                           const Divider(height: 12),
@@ -391,7 +276,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildActionItem(
                             icon: Icons.contact_support_outlined,
                             title: 'contact_us'.tr,
-                            isRtl: isRtl,
                             onTap: () => Get.to(() => const ContactUsScreen()),
                           ),
                           const Divider(height: 12),
@@ -407,7 +291,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildActionItem(
                             icon: Icons.info_outline,
                             title: 'about_us'.tr,
-                            isRtl: isRtl,
                             onTap: ()=> Get.to(() => const AboutUsScreen()),
                           ),
                           const Divider(height: 12),
@@ -423,7 +306,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           _buildActionItem(
                             icon: Icons.share_outlined,
                             title: 'share_app'.tr,
-                            isRtl: isRtl,
                             onTap: ()  => shareApp(),
                           ),
                         ],
@@ -598,55 +480,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDropdownItem({
-    required IconData icon,
-    required String title,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryGreen.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.black, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(color: Colors.black, fontSize: 16),
-          ),
-        ),
-        DropdownButton<String>(
-          value: value,
-          underline: const SizedBox(),
-          icon: const Icon(Icons.arrow_drop_down, color: AppTheme.primaryGreen),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(
-                item,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
-
   Widget _buildActionItem({
     required IconData icon,
     required String title,
-    required bool isRtl,
     required VoidCallback onTap,
   }) {
     return Padding(
@@ -656,13 +492,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Row(
           children: [
             Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: Colors.black, size: 24),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Icon(icon, color: Colors.black, size: 24),
+            ),
 
             const SizedBox(width: 16),
             Expanded(
@@ -671,20 +507,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: const TextStyle(color: Colors.black, fontSize: 16),
               ),
             ),
-            Directionality(
-              // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
-              textDirection: Get.locale?.languageCode == 'ar'
-                  ? TextDirection.rtl
-                  : TextDirection.ltr,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.black,
-                    size: 15,
-                  ),
-                ],
-              ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.black,
+              size: 15,
             ),
           ],
         ),

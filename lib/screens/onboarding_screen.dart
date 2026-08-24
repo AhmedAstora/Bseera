@@ -46,12 +46,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     ];
 
-    // فحص اتجاه اللغة الحالية (RTL للعربية و LTR للإنجليزية)
-    final bool isRtl = Get.locale?.languageCode == 'ar';
-
     return Scaffold(
       body: Directionality(
-        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: TextDirection.rtl,
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -65,8 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 // Skip Button
                 Align(
-                  // 🌟 جعل زر التخطي في اليمين للعربية وفي اليسار للإنجليزية تلقائياً
-                  alignment: isRtl ? Alignment.topRight : Alignment.topLeft,
+                  alignment: Alignment.topRight,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: TextButton(
@@ -149,18 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 curve: Curves.easeInOut,
                               );
                             },
-                            // 🌟 قلب اتجاه سهم العودة حسب اللغة
-                            icon: Directionality(
-                              // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
-                              textDirection: Get.locale?.languageCode == 'ar'
-                                  ? TextDirection.rtl
-                                  : TextDirection.ltr,
-                              child: Row(
-                                children: [
-                                  Icon(Icons.arrow_back,),
-                                ],
-                              ),
-                            ),
+                            icon: const Icon(Icons.arrow_back),
                             label: Text('previous'.tr), // 🌟 ترجمة "السابق"
                           ),
                         )
@@ -193,19 +178,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 _currentPage < _pages.length - 1 ? 'next'.tr : 'start'.tr,
                               ),
                               const SizedBox(width: 8), // مسافة بين النص والأيقونة
-                              Directionality(
-                                // هنا السحر: إذا كان التطبيق عربي، اجعل الاتجاه RTL فيقلب الأيقونات تلقائياً
-                                textDirection: Get.locale?.languageCode == 'ar'
-                                    ? TextDirection.rtl
-                                    : TextDirection.ltr,
-                                child: Row(
-                                  children: [
-                                    Icon(_currentPage < _pages.length - 1?
-                                 Icons.arrow_forward
+                              Icon(
+                                _currentPage < _pages.length - 1
+                                    ? Icons.arrow_forward
                                     : Icons.check,
-                              ),
-                                  ],
-                                ),
                               ),
                             ],
                           ),

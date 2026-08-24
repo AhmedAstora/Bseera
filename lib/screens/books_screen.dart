@@ -100,7 +100,7 @@ class _BooksScreenState extends State<BooksScreen> {
                         final category = _categories[index];
                         return Container(
                           width: 120,
-                          margin: const EdgeInsets.only(right: 12),
+                          margin: const EdgeInsetsDirectional.only(end: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

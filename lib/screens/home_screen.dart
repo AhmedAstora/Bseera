@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'package:bseera/screens/azkar_screen.dart';
 import 'package:bseera/screens/qibla_compass_screen.dart';
+import '../services/azan_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:adhan/adhan.dart';
-import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import 'quran_screen.dart';
 import 'prayer_times_screen.dart';
@@ -23,23 +22,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // متغيرات مواقيت الصلاة الديناميكية
-  double _latitude = 31.7683;
-  double _longitude = 35.2137;
+  final AzanService _azan = AzanService.instance;
+
   bool _isLoadingPrayers = true;
   Timer? _timeTimer;
 
-  String _fajrTime = '04:30';
-  String _dhuhrTime = '12:15';
-  String _asrTime = '15:45';
-  String _maghribTime = '18:20';
-  String _ishaTime = '19:45';
+  // قيم مؤقتة فقط لحد ما توصل أوقات الصلاة الحقيقية المحسوبة حسب موقع
+  // المستخدم الفعلي (AzanService) - مش قيم ثابتة نهائية.
+  String _fajrTime = '--:--';
+  String _dhuhrTime = '--:--';
+  String _asrTime = '--:--';
+  String _maghribTime = '--:--';
+  String _ishaTime = '--:--';
   String _currentPrayerName = '';
+  bool _notificationsOn = true;
 
   @override
   void initState() {
     super.initState();
-    _getUserLocationAndCalculate();
+    _notificationsOn = _azan.notificationsEnabled;
+    _loadPrayerTimes();
     // مؤقت لتحديث الوقت والتاريخ في الواجهة كل دقيقة تلقائياً
     _timeTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (mounted) setState(() {});
@@ -52,53 +54,50 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _getUserLocationAndCalculate() async {
+  /// بدل ما نجيب الموقع ونحسب من جديد، نسحب من AzanService المركزية
+  /// (نفس المصدر يلي بتستخدمه شاشة أوقات الصلاة والجدولة بالخلفية).
+  Future<void> _loadPrayerTimes() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
-        Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
-        );
-        _latitude = position.latitude;
-        _longitude = position.longitude;
+      if (!_azan.isInitialized) {
+        await _azan.init();
+      } else {
+        await _azan.ensureScheduleIsFresh();
       }
     } catch (e) {
-      debugPrint('Error fetching location: $e');
-    } finally {
-      _calculatePrayers();
+      // ما منسيب الواجهة عالقة على القيم المؤقتة بصمت لو صار خطأ غير متوقع.
+      debugPrint('HomeScreen: prayer times load error -> $e');
+      if (mounted) setState(() => _isLoadingPrayers = false);
+      return;
     }
+
+    final prayerTimesData = _azan.todayPrayerTimes;
+    if (prayerTimesData == null || !mounted) return;
+
+    final timeFormat = DateFormat('hh:mm');
+
+    setState(() {
+      _fajrTime = timeFormat.format(prayerTimesData.fajr.toLocal());
+      _dhuhrTime = timeFormat.format(prayerTimesData.dhuhr.toLocal());
+      _asrTime = timeFormat.format(prayerTimesData.asr.toLocal());
+      _maghribTime = timeFormat.format(prayerTimesData.maghrib.toLocal());
+      _ishaTime = timeFormat.format(prayerTimesData.isha.toLocal());
+      _currentPrayerName = prayerTimesData.currentPrayer().name;
+      _isLoadingPrayers = false;
+    });
   }
 
-  void _calculatePrayers() {
-    final coordinates = Coordinates(_latitude, _longitude);
-    final params = CalculationMethod.muslim_world_league.getParameters();
-    params.madhab = Madhab.shafi;
-    final now = DateTime.now();
-    final prayerTimesData = PrayerTimes(
-      coordinates,
-      DateComponents.from(now),
-      params,
+  Future<void> _toggleNotifications() async {
+    final newValue = !_notificationsOn;
+    setState(() => _notificationsOn = newValue);
+    await _azan.setNotificationsEnabled(newValue);
+
+    Get.snackbar(
+      newValue ? 'success_title'.tr : 'info_title'.tr,
+      newValue ? 'notifications_enabled_msg'.tr : 'notifications_disabled_msg'.tr,
+      backgroundColor: newValue ? Colors.green : Colors.grey,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
     );
-
-    final String currentLangCode = Get.locale?.languageCode ?? 'ar';
-    final timeFormat = DateFormat('hh:mm'); // تنسيق الكروت الأصلي الخاص بك
-
-    if (mounted) {
-      setState(() {
-        _fajrTime = timeFormat.format(prayerTimesData.fajr.toLocal());
-        _dhuhrTime = timeFormat.format(prayerTimesData.dhuhr.toLocal());
-        _asrTime = timeFormat.format(prayerTimesData.asr.toLocal());
-        _maghribTime = timeFormat.format(prayerTimesData.maghrib.toLocal());
-        _ishaTime = timeFormat.format(prayerTimesData.isha.toLocal());
-
-        _currentPrayerName = prayerTimesData.currentPrayer().name;
-        _isLoadingPrayers = false;
-      });
-    }
   }
 
   Widget _getCurrentBody() {
@@ -118,15 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🌟 فحص اتجاه اللغة الحالية ديناميكياً للتطبيق
-    final bool isRtl = Get.locale?.languageCode == 'ar';
-
-    // 🌟 نقل قائمة التنقل إلى هنا لتقرأ الـ .tr بشكل ديناميكي متجدد عند تبديل اللغة
+    // 🌟 نقل قائمة التنقل إلى هنا لتقرأ الـ .tr بشكل ديناميكي متجدد
     final List<Map<String, dynamic>> _navItems = [
-      {'icon': Icons.home, 'label': 'home'.tr},
-      {'icon': Icons.menu_book, 'label': 'quran'.tr},
-      {'icon': Icons.self_improvement, 'label': 'prayer'.tr},
-      {'icon': Icons.format_list_bulleted, 'label': 'Qibla'.tr},
+      {'icon': 'assets/images/home (1).png', 'label': 'home'.tr},
+      {'icon': 'assets/images/quran (1).png', 'label': 'quran'.tr},
+      {'icon': 'assets/images/salat.png', 'label': 'prayer'.tr},
+      {'icon': 'assets/images/kaaba.png', 'label': 'Qibla'.tr},
     ];
 
     return Scaffold(
@@ -154,7 +150,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           items: _navItems.map((item) {
             return BottomNavigationBarItem(
-              icon: Icon(item['icon']),
+              // نستخدم ImageIcon ونمرر له AssetImage
+              icon: ImageIcon(
+                AssetImage(item['icon']),
+                size: 28, // يمكنك التحكم بالحجم
+              ),
               label: item['label'],
             );
           }).toList(),
@@ -165,16 +165,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomeContent() {
     final now = DateTime.now();
-    final bool isRtl = Get.locale?.languageCode == 'ar';
 
-    // ضبط لغة التنسيق لعرض الوقت والتاريخ بشكل متوافق (AM/PM مقابل ص/م)
-    final String currentLangCode = Get.locale?.languageCode ?? 'ar';
     final time = DateFormat('hh:mm').format(now);
-    final period = DateFormat('a', currentLangCode).format(now);
+    final period = DateFormat('a', 'ar').format(now);
 
-    // تهيئة وعرض التاريخ الهجري والملادي حسب لغة التطبيق الحالية
+    // التطبيق عربي فقط، فصيغة التاريخ الهجري دايماً بالشكل العربي.
     final hijriDate =
-        "${HijriCalendar.now().toFormat(isRtl ? "DD, dd MMMM yyyy" : "dd MMMM yyyy")} ${'hijri_symbol'.tr}";
+        "${HijriCalendar.now().toFormat("DD, dd MMMM yyyy")} ${'hijri_symbol'.tr}";
 
     return CustomScrollView(
       slivers: [
@@ -214,14 +211,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Icons.favorite_border,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: () => Get.toNamed('/favorites'),
                               ),
                               IconButton(
-                                icon: const Icon(
-                                  Icons.notifications_outlined,
+                                icon: Icon(
+                                  _notificationsOn
+                                      ? Icons.notifications
+                                      : Icons.notifications_off_outlined,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {},
+                                onPressed: _toggleNotifications,
                               ),
                             ],
                           ),
@@ -231,64 +230,64 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Mosque Image & Greeting
                     Container(
-                          height: 160,
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/logo.png'),
-                              fit: BoxFit.cover,
-                            ),
+                      height: 160,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        image: const DecorationImage(
+                          image: AssetImage('assets/images/logo.png'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryGreen.withOpacity(0.7),
+                              AppTheme.primaryGreen.withOpacity(0.3),
+                            ],
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
                           ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppTheme.primaryGreen.withOpacity(0.7),
-                                  AppTheme.primaryGreen.withOpacity(0.3),
-                                ],
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
-                              ),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    child: Text(
-                                      textAlign: TextAlign.center,
-                                      'islamic_greeting'.tr,
-                                      // 🌟 ترجمة السلام عليكم...
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineLarge
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                          ),
-                                    ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Text(
+                                  textAlign: TextAlign.center,
+                                  'islamic_greeting'.tr,
+                                  // 🌟 ترجمة السلام عليكم...
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
+                                      ?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 18,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'welcome_bseera'.tr,
-                                    // 🌟 ترجمة أهلاً بكم في تطبيق بصيرة
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Colors.white.withOpacity(0.9),
-                                        ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'welcome_bseera'.tr,
+                                // 🌟 ترجمة أهلاً بكم في تطبيق بصيرة
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
                           ),
-                        )
+                        ),
+                      ),
+                    )
                         .animate()
                         .fadeIn(duration: 600.ms)
                         .slideY(begin: 0.2, end: 0),
@@ -340,59 +339,59 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Quick Actions Grid
               GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 1.3,
-                    children: [
-                      _buildQuickAction(
-                        icon: Icons.menu_book,
-                        title: 'quran_kareem'.tr,
-                        // 🌟 مترجم سابقاً
-                        subtitle: 'read_and_listen'.tr,
-                        // 🌟 ترجمة اقرأ واستمع
-                        color: AppTheme.primaryGreen,
-                        onTap: () {
-                          setState(() {
-                            _selectedIndex = 1;
-                          });
-                        },
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.access_time_filled,
-                        title: 'prayer_times'.tr,
-                        // 🌟 مترجم سابقاً
-                        subtitle: 'next_prayer'.tr,
-                        // 🌟 ترجمة الصلاة القادمة
-                        color: AppTheme.teal,
-                        onTap: () {
-                          setState(() {
-                            _selectedIndex = 2;
-                          });
-                        },
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.format_list_bulleted,
-                        title: 'azkar_title'.tr,
-                        // 🌟 ترجمة الأذكار
-                        subtitle: 'today_azkar'.tr,
-                        // 🌟 ترجمة أذكار اليوم
-                        color: AppTheme.gold,
-                        onTap: () => Get.toNamed('/azkar'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.fingerprint,
-                        title: 'tasbeeh_title'.tr,
-                        // 🌟 ترجمة التسبيح
-                        subtitle: 'electronic_rosary'.tr,
-                        // 🌟 ترجمة المسبحة الإلكترونية
-                        color: AppTheme.navy,
-                        onTap: () => Get.toNamed('/tasbeeh'),
-                      ),
-                    ],
-                  )
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.3,
+                children: [
+                  _buildQuickAction(
+                    icon: Icons.menu_book,
+                    title: 'quran_kareem'.tr,
+                    // 🌟 مترجم سابقاً
+                    subtitle: 'read_and_listen'.tr,
+                    // 🌟 ترجمة اقرأ واستمع
+                    color: AppTheme.primaryGreen,
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 1;
+                      });
+                    },
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.access_time_filled,
+                    title: 'prayer_times'.tr,
+                    // 🌟 مترجم سابقاً
+                    subtitle: 'next_prayer'.tr,
+                    // 🌟 ترجمة الصلاة القادمة
+                    color: AppTheme.teal,
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 2;
+                      });
+                    },
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.format_list_bulleted,
+                    title: 'azkar_title'.tr,
+                    // 🌟 ترجمة الأذكار
+                    subtitle: 'today_azkar'.tr,
+                    // 🌟 ترجمة أذكار اليوم
+                    color: AppTheme.gold,
+                    onTap: () => Get.toNamed('/azkar'),
+                  ),
+                  _buildQuickAction(
+                    icon: Icons.fingerprint,
+                    title: 'tasbeeh_title'.tr,
+                    // 🌟 ترجمة التسبيح
+                    subtitle: 'electronic_rosary'.tr,
+                    // 🌟 ترجمة المسبحة الإلكترونية
+                    color: AppTheme.navy,
+                    onTap: () => Get.toNamed('/tasbeeh'),
+                  ),
+                ],
+              )
                   .animate()
                   .fadeIn(duration: 600.ms, delay: 200.ms)
                   .slideY(begin: 0.2, end: 0),
@@ -404,42 +403,42 @@ class _HomeScreenState extends State<HomeScreen> {
               // 🌟 ترجمة عنوان حديث اليوم
               const SizedBox(height: 12),
               Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppTheme.primaryGreen, AppTheme.gold],
-                        stops: [0.0, 1.0],
-                        begin: Alignment.bottomRight,
-                        end: Alignment.topLeft,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppTheme.primaryGreen.withOpacity(0.4),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryGreen, AppTheme.gold],
+                    stops: [0.0, 1.0],
+                    begin: Alignment.bottomRight,
+                    end: Alignment.topLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppTheme.primaryGreen.withOpacity(0.4),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'hadith_content'.tr, // 🌟 ترجمة متن الحديث النبوي
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(
+                        height: 1.8,
+                        color: AppTheme.charcoal,
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'hadith_content'.tr, // 🌟 ترجمة متن الحديث النبوي
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(
-                                height: 1.8,
-                                color: AppTheme.charcoal,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'hadith_narrator'.tr, // 🌟 ترجمة الراوي (رواه مسلم)
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: AppTheme.primaryGreen,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'hadith_narrator'.tr, // 🌟 ترجمة الراوي (رواه مسلم)
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
+                  ],
+                ),
+              )
                   .animate()
                   .fadeIn(duration: 600.ms, delay: 400.ms)
                   .slideY(begin: 0.2, end: 0),
@@ -451,52 +450,50 @@ class _HomeScreenState extends State<HomeScreen> {
               // 🌟 ترجمة مواقيت الصلاة اليوم
               const SizedBox(height: 12),
               SizedBox(
-                    height: 100,
-                    child: _isLoadingPrayers
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppTheme.primaryGreen,
-                            ),
-                          )
-                        : ListView(
-                            scrollDirection: Axis.horizontal,
-                            reverse: isRtl,
-                            // 🌟 مرونة بدء التمرير الأفقي: يبدأ من اليمين في العربية ومن اليسار في الإنجليزية
-                            children: [
-                              _buildPrayerTimeCard(
-                                'fajr'.tr,
-                                _fajrTime,
-                                Icons.wb_twilight,
-                                _currentPrayerName == 'fajr',
-                              ),
-                              // 🌟 ترجمة الصلوات الخمس
-                              _buildPrayerTimeCard(
-                                'dhuhr'.tr,
-                                _dhuhrTime,
-                                Icons.wb_sunny,
-                                _currentPrayerName == 'dhuhr',
-                              ),
-                              _buildPrayerTimeCard(
-                                'asr'.tr,
-                                _asrTime,
-                                Icons.wb_cloudy,
-                                _currentPrayerName == 'asr',
-                              ),
-                              _buildPrayerTimeCard(
-                                'maghrib'.tr,
-                                _maghribTime,
-                                Icons.nights_stay,
-                                _currentPrayerName == 'maghrib',
-                              ),
-                              _buildPrayerTimeCard(
-                                'isha'.tr,
-                                _ishaTime,
-                                Icons.bedtime,
-                                _currentPrayerName == 'isha',
-                              ),
-                            ],
-                          ),
-                  )
+                height: 100,
+                child: _isLoadingPrayers
+                    ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryGreen,
+                  ),
+                )
+                    : ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildPrayerTimeCard(
+                      'fajr'.tr,
+                      _fajrTime,
+                      Icons.wb_twilight,
+                      _currentPrayerName == 'fajr',
+                    ),
+                    // 🌟 ترجمة الصلوات الخمس
+                    _buildPrayerTimeCard(
+                      'dhuhr'.tr,
+                      _dhuhrTime,
+                      Icons.wb_sunny,
+                      _currentPrayerName == 'dhuhr',
+                    ),
+                    _buildPrayerTimeCard(
+                      'asr'.tr,
+                      _asrTime,
+                      Icons.wb_cloudy,
+                      _currentPrayerName == 'asr',
+                    ),
+                    _buildPrayerTimeCard(
+                      'maghrib'.tr,
+                      _maghribTime,
+                      Icons.nights_stay,
+                      _currentPrayerName == 'maghrib',
+                    ),
+                    _buildPrayerTimeCard(
+                      'isha'.tr,
+                      _ishaTime,
+                      Icons.bedtime,
+                      _currentPrayerName == 'isha',
+                    ),
+                  ],
+                ),
+              )
                   .animate()
                   .fadeIn(duration: 600.ms, delay: 600.ms)
                   .slideX(begin: -0.2, end: 0),
@@ -508,18 +505,17 @@ class _HomeScreenState extends State<HomeScreen> {
               // 🌟 ترجمة كتب إسلامية
               const SizedBox(height: 12),
               SizedBox(
-                    height: 200,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      reverse: isRtl,
-                      // 🌟 مرونة الترتيب من اليمين لليسار حسب لغة الواجهة الحالية
-                      children: [
-                        _buildBookCard('assets/images/book3.png'),
-                        _buildBookCard('assets/images/book1.png'),
-                        _buildBookCard('assets/images/book2.png'),
-                      ],
-                    ),
-                  )
+                height: 200,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                
+                  children: [
+                    _buildBookCard('assets/images/book3.png'),
+                    _buildBookCard('assets/images/book1.png'),
+                    _buildBookCard('assets/images/book2.png'),
+                  ],
+                ),
+              )
                   .animate()
                   .fadeIn(duration: 600.ms, delay: 800.ms)
                   .slideX(begin: -0.2, end: 0),
@@ -610,11 +606,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPrayerTimeCard(
-    String name,
-    String time,
-    IconData icon,
-    bool isNext,
-  ) {
+      String name,
+      String time,
+      IconData icon,
+      bool isNext,
+      ) {
     return Container(
       width: 85,
       margin: const EdgeInsets.only(left: 12),

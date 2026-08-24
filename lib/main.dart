@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:bseera/screens/about_us_screen.dart';
 import 'package:bseera/screens/contact_us_screen.dart';
 import 'package:bseera/screens/faq_screen.dart';
 import 'package:bseera/utils/translate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -20,10 +23,12 @@ import 'screens/book_detail_screen.dart';
 import 'screens/quran_reader_screen.dart';
 import 'screens/azkar_screen.dart';
 import 'screens/tasbeeh_screen.dart';
+import 'screens/favorites_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/azan_service.dart';
 import 'utils/performance_optimizer.dart';
 
-// تعريف الـ Plugin بشكل عام
+// تعريف الـ Plugin بشكل عام (لا يزال مستخدم من شاشات أخرى قديمة)
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() async {
@@ -40,6 +45,13 @@ void main() async {
   ]);
 
   runApp(const IslamicApp(initialRoute: '/splash'));
+
+  // 🌟 تهيئة خدمة الأذان المركزية مرة واحدة فقط عند إقلاع التطبيق:
+  // بتقرأ الإعدادات المحفوظة (GetStorage)، تجيب الموقع إذا لازم،
+  // وتجدول إشعارات الأذان الحقيقية لعدة أيام قدام حتى لو التطبيق مقفول.
+  // ملاحظة: ما منستنى (await) هون قصدياً، لأن طلب إذن "Exact Alarm" بيفتح
+  // شاشة إعدادات النظام، وما بدنا هيك شي يوقف ظهور واجهة التطبيق نفسها.
+  unawaited(AzanService.instance.init());
 }
 
 Future<void> _initializeBackgroundServices() async {
@@ -68,14 +80,29 @@ class IslamicApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      // نفس فكرة اللغة: إذا المستخدم اختار وضع محدد يدوياً من الإعدادات
+      // منحترمه، وإلا منتبع وضع نظام الجهاز افتراضياً.
+      themeMode: box.read('dark_mode_enabled') == null
+          ? ThemeMode.system
+          : (box.read('dark_mode_enabled') == true
+              ? ThemeMode.dark
+              : ThemeMode.light),
       translations: AppTranslations(),
 
-      // هنا جعلنا اللغة تعتمد على جهاز المستخدم، أو الخيار المحفوظ في GetStorage
-      locale: box.read('user_lang') != null
-          ? Locale(box.read('user_lang'))
-          : Get.deviceLocale,
+      // 🌟 التطبيق عربي فقط الآن - ما في خيار لغة تانية، فمنثبّت العربية دايماً
+      // بدل ما نعتمد على لغة الجهاز أو خيار محفوظ.
+      locale: const Locale('ar', 'AE'),
       fallbackLocale: const Locale('ar', 'AE'),
+
+      // 🌟 ضروري حتى يتحدد اتجاه الواجهة (RTL) تلقائياً بكل شاشات التطبيق.
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ar', 'AE'),
+      ],
 
       defaultTransition: Transition.fade,
       transitionDuration: const Duration(milliseconds: 250),
@@ -95,6 +122,7 @@ class IslamicApp extends StatelessWidget {
         GetPage(name: '/quran-reader', page: () => const QuranReaderScreen()),
         GetPage(name: '/azkar', page: () => const AzkarScreen()),
         GetPage(name: '/tasbeeh', page: () => const TasbeehScreen()),
+        GetPage(name: '/favorites', page: () => const FavoritesScreen()),
       ],
       initialRoute: initialRoute,
       builder: (context, child) {

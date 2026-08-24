@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../theme/app_theme.dart';
 
 class TasbeehScreen extends StatefulWidget {
@@ -17,6 +19,10 @@ class _TasbeehScreenState extends State<TasbeehScreen>
   String _selectedZikr = 'subhan_allah'.tr;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+
+  final GetStorage _box = GetStorage();
+  late bool _vibrationEnabled = _box.read('tasbeeh_vibration_enabled') ?? true;
+  late bool _lapVibrationEnabled = _box.read('tasbeeh_lap_vibration_enabled') ?? true;
 
   final List<Map<String, dynamic>> _azkarList = [
     {'text': 'subhan_allah', 'target': 33, 'color': AppTheme.primaryGreen},
@@ -51,11 +57,17 @@ class _TasbeehScreenState extends State<TasbeehScreen>
 
   void _incrementCounter() {
     _animationController.forward().then((_) => _animationController.reverse());
+    if (_vibrationEnabled) {
+      HapticFeedback.lightImpact();
+    }
     setState(() {
       _counter++;
       if (_counter >= _target) {
         _lapCount++;
         _counter = 0;
+        if (_lapVibrationEnabled) {
+          HapticFeedback.heavyImpact();
+        }
         _showCompletionDialog();
       }
     });
@@ -143,7 +155,7 @@ class _TasbeehScreenState extends State<TasbeehScreen>
                         Icons.settings,
                         color: AppTheme.primaryGreen,
                       ),
-                      onPressed: () {},
+                      onPressed: _showSettingsSheet,
                     ),
                   ],
                 ),
@@ -167,7 +179,7 @@ class _TasbeehScreenState extends State<TasbeehScreen>
                         _lapCount = 0;
                       }),
                       child: Container(
-                        margin: const EdgeInsets.only(right: 8),
+                        margin: const EdgeInsetsDirectional.only(end: 8),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -378,6 +390,153 @@ class _TasbeehScreenState extends State<TasbeehScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _showSettingsSheet() {
+    final targetController = TextEditingController();
+
+    Get.bottomSheet(
+      StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Container(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'tasbeeh_settings_title'.tr,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineLarge
+                      ?.copyWith(fontSize: 18),
+                ),
+                const SizedBox(height: 20),
+                _buildSettingsSwitch(
+                  icon: Icons.vibration,
+                  title: 'vibration_on_tap'.tr,
+                  subtitle: 'vibration_on_tap_sub'.tr,
+                  value: _vibrationEnabled,
+                  onChanged: (value) {
+                    setSheetState(() => _vibrationEnabled = value);
+                    setState(() => _vibrationEnabled = value);
+                    _box.write('tasbeeh_vibration_enabled', value);
+                  },
+                ),
+                const Divider(height: 24),
+                _buildSettingsSwitch(
+                  icon: Icons.celebration_outlined,
+                  title: 'sound_on_lap'.tr,
+                  subtitle: 'sound_on_lap_sub'.tr,
+                  value: _lapVibrationEnabled,
+                  onChanged: (value) {
+                    setSheetState(() => _lapVibrationEnabled = value);
+                    setState(() => _lapVibrationEnabled = value);
+                    _box.write('tasbeeh_lap_vibration_enabled', value);
+                  },
+                ),
+                const Divider(height: 24),
+                Row(
+                  children: [
+                    const Icon(Icons.flag_outlined, color: AppTheme.primaryGreen),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'custom_target'.tr,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            'custom_target_sub'.tr,
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: targetController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'custom_target_hint'.tr,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreen,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        final newTarget = int.tryParse(targetController.text);
+                        if (newTarget != null && newTarget > 0) {
+                          setState(() {
+                            _target = newTarget;
+                            _counter = 0;
+                          });
+                          Get.back();
+                        }
+                      },
+                      child: Text('apply'.tr),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSettingsSwitch({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: AppTheme.primaryGreen),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 16)),
+              Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: AppTheme.primaryGreen,
+        ),
+      ],
     );
   }
 

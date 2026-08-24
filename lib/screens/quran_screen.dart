@@ -1,7 +1,10 @@
 import 'package:bseera/Controller/quran_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:quran/quran.dart' as quran;
 import '../theme/app_theme.dart';
+import 'quran_reader_screen.dart' show quranSurahName;
 
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
@@ -24,26 +27,30 @@ class _QuranScreenState extends State<QuranScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRtl = Get.locale?.languageCode == 'ar';
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final Color cardSurface = isDark ? const Color(0xFF16213E) : Colors.white;
+    final Color textPrimary = isDark ? Colors.white : AppTheme.charcoal;
+    final Color textMuted = isDark ? Colors.white60 : Colors.grey;
 
-    const Color darkSurface = Color(0xFFFFFFFF);
-    const Color darkSecondaryField = Color(0xFF000000);
-    const Color textMuted = Color(0xFF000000);
+    // نفس مفتاح last_page يلي شاشة قراءة القرآن بتكتبه لحظياً بكل صفحة
+    // (quran_reader_screen.dart) - هيك ما في حاجة لآلية تخزين إضافية.
+    final int? lastPage = GetStorage().read<int>('last_page');
+    final String lastReadLabel = lastPage != null
+        ? '${quranSurahName(quran.getPageData(lastPage).first['surah'] as int)} • ${'page'.tr} $lastPage'
+        : 'no_reading_yet'.tr;
 
     return Scaffold(
       body: Directionality(
-        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: TextDirection.rtl,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             SliverAppBar(
-              expandedHeight: _isSearching ? 130 : 200,
+              expandedHeight: _isSearching ? 140 : 140,
               floating: false,
               pinned: true,
               elevation: 0,
-              backgroundColor: AppTheme.primaryGreen,
-
               automaticallyImplyLeading: false,
               title: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -64,19 +71,19 @@ class _QuranScreenState extends State<QuranScreen> {
                   key: const ValueKey('searchField'),
                   height: 44,
                   decoration: BoxDecoration(
-                    color: darkSecondaryField,
+                    color: Colors.white.withOpacity(0.16),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    border: Border.all(color: Colors.white.withOpacity(0.25)),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: _controller.filterSurahs,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.black, fontSize: 14),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'search_surah'.tr,
-                      hintStyle: const TextStyle(color: Colors.black, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.gold, size: 20),
+                      hintStyle: const TextStyle(color: Colors.white70, fontSize: 13),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.goldLight, size: 20),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.close_rounded, color: Colors.grey, size: 20),
                         onPressed: () {
@@ -111,15 +118,6 @@ class _QuranScreenState extends State<QuranScreen> {
                   });
                 },
               ),
-              actions: [
-                if (!_isSearching) ...[
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border_rounded, color: Colors.white, size: 26),
-                    onPressed: () {},
-                  ),
-                  const SizedBox(width: 8),
-                ]
-              ],
               flexibleSpace: FlexibleSpaceBar(
                 stretchModes: const [StretchMode.zoomBackground],
                 background: Stack(
@@ -132,14 +130,12 @@ class _QuranScreenState extends State<QuranScreen> {
                     ),
                     Positioned(
                       top: -40,
-                      right: isRtl ? -30 : null,
-                      left: isRtl ? null : -30,
+                      right: -30,
                       child: CircleAvatar(radius: 100, backgroundColor: Colors.white.withOpacity(0.03)),
                     ),
                     Positioned(
                       bottom: 20,
-                      left: isRtl ? -20 : null,
-                      right: isRtl ? null : -20,
+                      left: -20,
                       child: CircleAvatar(radius: 70, backgroundColor: AppTheme.gold.withOpacity(0.04)),
                     ),
                     if (!_isSearching)
@@ -208,7 +204,7 @@ class _QuranScreenState extends State<QuranScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isRtl ? 'سورة البقرة • آية ٢٠٥' : 'Surah Al-Baqarah • Ayah 205',
+                      lastReadLabel,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface, // لون النص التلقائي
@@ -216,13 +212,15 @@ class _QuranScreenState extends State<QuranScreen> {
                     ),
                     const SizedBox(height: 6),
                     InkWell(
-                      onTap: () => Get.toNamed('/quran-reader', arguments: {'surah_id': 2}),
+                      // بدون arguments: شاشة القراءة بترجع تلقائياً لآخر صفحة
+                      // محفوظة (أو صفحة ١ إذا ما في قراءة سابقة).
+                      onTap: () => Get.toNamed('/quran-reader'),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text('continue_reading'.tr, style: const TextStyle(color: AppTheme.gold, fontSize: 12, fontWeight: FontWeight.bold)),
                           const SizedBox(width: 4),
-                          Icon(isRtl ? Icons.arrow_back_ios_new : Icons.arrow_forward_ios, color: AppTheme.gold, size: 11),
+                          const Icon(Icons.arrow_back_ios_new, color: AppTheme.gold, size: 11),
                         ],
                       ),
                     ),
@@ -298,7 +296,7 @@ class _QuranScreenState extends State<QuranScreen> {
                     child: Center(
                       child: Text(
                         'no_results'.tr,
-                        style: const TextStyle(color: textMuted, fontSize: 15),
+                        style: TextStyle(color: textMuted, fontSize: 15),
                       ),
                     ),
                   ),
@@ -315,8 +313,9 @@ class _QuranScreenState extends State<QuranScreen> {
                       child: _buildSurahCard(
                         Map<String, dynamic>.from(_controller.filteredSurahs[index]),
                         index,
-                        darkSurface,
+                        cardSurface,
                         textMuted,
+                        textPrimary,
                       ),
                     );
                   },
@@ -329,16 +328,19 @@ class _QuranScreenState extends State<QuranScreen> {
     );
   }
 
-  Widget _buildSurahCard(Map<String, dynamic> surah, int index, Color surfaceColor, Color mutedTextColor) {
+  Widget _buildSurahCard(Map<String, dynamic> surah, int index, Color surfaceColor, Color mutedTextColor, Color primaryTextColor) {
     int currentSurahNumber = surah['number'] ?? (index + 1);
 
-    final String surahName = Get.locale?.languageCode == 'en'
-        ? (surah['english_name'] ?? surah['title'] ?? '').toString()
-        : (surah['title'] ?? surah['name'] ?? '').toString();
+    final String surahName = (surah['titleAr'] ?? surah['name'] ?? '').toString();
 
     final String versesCount = surah['count']?.toString() ?? '0';
-    final String place = surah['place']?.toString() ?? 'Mecca';
-    final String surahTypeDisplay = (place == 'Mecca' || place == 'Makkah') ? 'mecca'.tr : 'madinah'.tr;
+
+    final String typeDisplay = surah['typeAr'] ?? '';
+
+// 3. تحديد الألوان ديناميكياً (نستخدم حقل type لمعرفة النوع بدون شروط نصية معقدة)
+// بما أننا نملك حقل type، يمكننا التحقق منه مباشرة
+    final bool isMakkah = (surah['type'] == 'Makkiyah' || surah['typeAr'] == 'مكية');
+    final Color statusColor = isMakkah ? AppTheme.gold : AppTheme.teal;
 
     return Container(
       decoration: BoxDecoration(
@@ -364,6 +366,7 @@ class _QuranScreenState extends State<QuranScreen> {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
+              // الجزء الخاص برقم السورة - وسام ثماني الشكل بتدرج ذهبي
               Stack(
                 alignment: Alignment.center,
                 children: [
@@ -373,9 +376,13 @@ class _QuranScreenState extends State<QuranScreen> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.8), width: 1.5),
+                        gradient: LinearGradient(
+                          colors: [AppTheme.gold.withOpacity(0.22), AppTheme.primaryGreen.withOpacity(0.35)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.gold.withOpacity(0.6), width: 1.2),
                       ),
                     ),
                   ),
@@ -383,9 +390,13 @@ class _QuranScreenState extends State<QuranScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.8), width: 1.5),
+                      gradient: LinearGradient(
+                        colors: [AppTheme.gold.withOpacity(0.22), AppTheme.primaryGreen.withOpacity(0.35)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.gold.withOpacity(0.6), width: 1.2),
                     ),
                   ),
                   Text(
@@ -399,14 +410,16 @@ class _QuranScreenState extends State<QuranScreen> {
                 ],
               ),
               const SizedBox(width: 18),
+
+              // اسم السورة وعدد الآيات
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       surahName,
-                      style: const TextStyle(
-                        color: Colors.black,
+                      style: TextStyle(
+                        color: primaryTextColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -422,20 +435,19 @@ class _QuranScreenState extends State<QuranScreen> {
                   ],
                 ),
               ),
+
+              // بادج مكية/مدنية (معدل)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                    color: (place == 'Mecca' || place == 'Makkah')
-                        ? AppTheme.gold.withOpacity(0.1)
-                        : AppTheme.teal.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: (place == 'Mecca' || place == 'Makkah') ? AppTheme.gold.withOpacity(0.2) : AppTheme.teal.withOpacity(0.2)
-                    )),
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: statusColor.withOpacity(0.2)),
+                ),
                 child: Text(
-                  surahTypeDisplay,
+                  typeDisplay,
                   style: TextStyle(
-                    color: (place == 'Mecca' || place == 'Makkah') ? AppTheme.gold : AppTheme.teal,
+                    color: statusColor,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -443,8 +455,10 @@ class _QuranScreenState extends State<QuranScreen> {
               ),
               const SizedBox(width: 6),
               IconButton(
-                icon: Icon(Icons.play_arrow_rounded, color: Colors.black, size: 26),
-                onPressed: () {},
+                icon: Icon(Icons.play_arrow_rounded, color: primaryTextColor.withOpacity(0.7), size: 26),
+                onPressed: () => Get.toNamed('/quran-reader', arguments: {
+                  'surah_id': currentSurahNumber,
+                }),
                 splashRadius: 22,
               ),
             ],

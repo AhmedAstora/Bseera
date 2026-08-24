@@ -30,6 +30,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildToolsVersion = "34.0.0"
     }
 
     buildTypes {

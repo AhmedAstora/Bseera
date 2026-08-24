@@ -1,9 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- بدون هاد الإذن، طلب الإذن الدقيق (requestExactAlarmsPermission) ما بيشتغل
+         على أندرويد 12+، وبتضل إشعارات الأذان تتجدول Inexact (ممكن تتأخر لحتى
+         ١٥ دقيقة بسبب توفير البطارية) حتى لو المستخدم وافق ظاهرياً. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:label="بَصِيرَة"

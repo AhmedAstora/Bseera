@@ -39,6 +39,16 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
       }
     }
 
+    Future<void> _launchWhatsapp() async {
+      final Uri whatsappUri = Uri.parse('https://wa.me/972568766673');
+
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar("تنبيه", "لم يتم العثور على تطبيق واتساب.");
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
       return Scaffold(
@@ -64,7 +74,7 @@ import 'package:flutter_email_sender/flutter_email_sender.dart';
                 icon: Icons.chat_bubble_outline,
                 title: 'whatsapp'.tr,
                 subtitle: '+972568766673',
-                onTap: () => _launchUrl(),
+                onTap: () => _launchWhatsapp(),
               ),
             ],
           ),
