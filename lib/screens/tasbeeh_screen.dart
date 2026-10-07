@@ -22,7 +22,8 @@ class _TasbeehScreenState extends State<TasbeehScreen>
 
   final GetStorage _box = GetStorage();
   late bool _vibrationEnabled = _box.read('tasbeeh_vibration_enabled') ?? true;
-  late bool _lapVibrationEnabled = _box.read('tasbeeh_lap_vibration_enabled') ?? true;
+  late bool _lapVibrationEnabled =
+      _box.read('tasbeeh_lap_vibration_enabled') ?? true;
 
   final List<Map<String, dynamic>> _azkarList = [
     {'text': 'subhan_allah', 'target': 33, 'color': AppTheme.primaryGreen},
@@ -143,11 +144,10 @@ class _TasbeehScreenState extends State<TasbeehScreen>
                       onPressed: () => Get.back(),
                     ),
                     Text(
-                      'tasbeeh_app'.tr,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                      'tasbeeh_app'.tr, // 🌟 ترجمة متن الحديث النبوي
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.charcoal,
                       ),
                     ),
                     IconButton(
@@ -415,10 +415,9 @@ class _TasbeehScreenState extends State<TasbeehScreen>
               children: [
                 Text(
                   'tasbeeh_settings_title'.tr,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineLarge
-                      ?.copyWith(fontSize: 18),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineLarge?.copyWith(fontSize: 18),
                 ),
                 const SizedBox(height: 20),
                 _buildSettingsSwitch(
@@ -447,7 +446,10 @@ class _TasbeehScreenState extends State<TasbeehScreen>
                 const Divider(height: 24),
                 Row(
                   children: [
-                    const Icon(Icons.flag_outlined, color: AppTheme.primaryGreen),
+                    const Icon(
+                      Icons.flag_outlined,
+                      color: AppTheme.primaryGreen,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -459,7 +461,10 @@ class _TasbeehScreenState extends State<TasbeehScreen>
                           ),
                           Text(
                             'custom_target_sub'.tr,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -527,7 +532,10 @@ class _TasbeehScreenState extends State<TasbeehScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontSize: 16)),
-              Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
         ),

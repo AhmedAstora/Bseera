@@ -114,34 +114,50 @@ class AppTheme {
     );
   }
 
+  // ألوان الوضع الداكن الأساسية - نفس عائلة اللون الأزرق الداكن بكل مكان
+  // (خلفية، بطاقات، حقول إدخال) بدل ما يصير كل عنصر درجة مختلفة عشوائياً.
+  static const Color darkBackground = Color(0xFF1A1A2E);
+  static const Color darkSurface = Color(0xFF16213E);
+  static const Color darkSurfaceLight = Color(0xFF0F3460);
+
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: primaryGreenLight,
-      scaffoldBackgroundColor: const Color(0xFF1A1A2E),
+      scaffoldBackgroundColor: darkBackground,
       colorScheme: const ColorScheme.dark(
         primary: primaryGreenLight,
         secondary: goldLight,
-        surface: Color(0xFF16213E),
+        surface: darkSurface,
         error: Color(0xFFE63946),
+        onPrimary: Colors.white,
+        onSecondary: Color(0xFF1A1A2E),
+        onSurface: Colors.white,
+        onError: Colors.white,
       ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(fontFamily: 'Cairo', fontSize: 32, fontWeight: FontWeight.bold, color: goldLight),
         displayMedium: TextStyle(fontFamily: 'Cairo', fontSize: 24, fontWeight: FontWeight.bold, color: goldLight),
-        bodyLarge: TextStyle(fontFamily: 'Cairo', fontSize: 16, color: Colors.white),
+        displaySmall: TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+        headlineLarge: TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w600, color: goldLight),
+        headlineMedium: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+        bodyLarge: TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.normal, color: Colors.white),
+        bodyMedium: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.normal, color: Colors.white70),
+        bodySmall: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.normal, color: Colors.white60),
+        labelLarge: TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w600, color: goldLight),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: Color(0xFF16213E),
+        backgroundColor: darkSurface,
         foregroundColor: Colors.white,
         titleTextStyle: TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
       ),
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFF16213E),
+        color: darkSurface,
         shadowColor: Colors.black.withAlpha(76),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -151,22 +167,44 @@ class AppTheme {
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: goldLight,
+          side: const BorderSide(color: goldLight, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF0F3460).withAlpha(127),
+        fillColor: darkSurfaceLight.withAlpha(127),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withAlpha(76))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: goldLight, width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: error, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        hintStyle: const TextStyle(fontFamily: 'Cairo', fontSize: 14, color: Colors.white60),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF16213E),
+        backgroundColor: darkSurface,
         selectedItemColor: goldLight,
         unselectedItemColor: Colors.grey,
+        selectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontFamily: 'Cairo', fontSize: 12),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: goldLight,
+        foregroundColor: darkBackground,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      dividerTheme: DividerThemeData(color: Colors.grey.withAlpha(60), thickness: 1),
     );
   }
 
